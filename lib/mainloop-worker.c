@@ -25,6 +25,7 @@
 #include "mainloop-call.h"
 #include "tls-support.h"
 #include "apphook.h"
+#include "scratch-buffers2.h"
 
 #include <iv.h>
 
@@ -189,6 +190,7 @@ main_loop_worker_thread_stop(void)
 void
 main_loop_worker_commence_to_work(void)
 {
+  scratch_buffers2_reclaim_allocations();
 }
 
 /*
