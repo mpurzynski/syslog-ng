@@ -49,6 +49,7 @@ main_loop_io_worker_job_submit(MainLoopIOWorkerJob *self)
 static void
 _work(MainLoopIOWorkerJob *self)
 {
+  main_loop_worker_commence_to_work();
   self->work(self->user_data);
   main_loop_worker_invoke_batch_callbacks();
 }

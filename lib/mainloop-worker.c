@@ -186,6 +186,11 @@ main_loop_worker_thread_stop(void)
   _release_thread_id();
 }
 
+void
+main_loop_worker_commence_to_work(void)
+{
+}
+
 /*
  * This function is called in the main thread prior to starting the
  * processing of a work item in a worker thread.

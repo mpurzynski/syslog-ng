@@ -213,6 +213,7 @@ log_threaded_dest_driver_do_work(gpointer data)
 
   self->suspended = FALSE;
   log_threaded_dest_driver_stop_watches(self);
+  main_loop_worker_commence_to_work();
 
   if (!self->worker.connected)
     {
