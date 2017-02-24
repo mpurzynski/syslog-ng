@@ -95,6 +95,7 @@ struct _AFInterSource
   struct iv_event post;
   struct iv_event schedule_wakeup;
   struct iv_timer mark_timer;
+  struct iv_timer periodic_timer;
   struct iv_task restart_task;
   gboolean watches_running:1;
 };
@@ -170,6 +171,39 @@ afinter_source_wakeup(LogSource *s)
 }
 
 static void
+update_and_run_periodic_timer(AFInterSource *self)
+{
+  if (!iv_timer_registered(&self->periodic_timer))
+  {
+    iv_validate_now();
+    self->periodic_timer.expires = iv_now;
+    self->periodic_timer.expires.tv_sec += 3;
+    iv_timer_register(&self->periodic_timer);
+    // todo: would be nice to have the above value from syslog config !!!
+  }
+  else
+  {
+    fprintf(stderr, "@@@@@@@@@@@ ERROR TIMER STILL REGISTERED !!!!!!!! %s\n", __func__);
+  }
+}
+
+static void
+periodic_timer_handle(void *p)
+{
+  LogMessage *msg;
+  AFInterSource *self = (AFInterSource *) p;
+
+  fprintf(stderr, "@@@@@@@@@@@ yippikaye TIMER FUN :):):):) %s\n", __func__);
+  // if timer is not registered (i.e. expired) set up expire time and register it again
+  
+  // new message, log_msg_new_*
+  msg = log_msg_new_internal(1, "@@@@@ yippikaye MY MESSAGE FOR YOU");
+  log_source_post(&self->super, msg);
+  update_and_run_periodic_timer(self);
+
+}
+
+static void
 afinter_source_init_watches(AFInterSource *self)
 {
   IV_EVENT_INIT(&self->post);
@@ -184,6 +218,11 @@ afinter_source_init_watches(AFInterSource *self)
   IV_TASK_INIT(&self->restart_task);
   self->restart_task.cookie = self;
   self->restart_task.handler = afinter_source_post;
+
+  IV_TIMER_INIT(&self->periodic_timer);
+  self->periodic_timer.cookie = self;
+  self->periodic_timer.handler = periodic_timer_handle;
+  update_and_run_periodic_timer(self); 
 }
 
 static void
@@ -333,6 +372,8 @@ afinter_source_new(AFInterSourceDriver *owner, LogSourceOptions *options)
 static gboolean
 afinter_sd_init(LogPipe *s)
 {
+  fprintf(stderr,"@@@@@@@@@@ yippikaye CALLED:%s\n",__func__);
+
   AFInterSourceDriver *self = (AFInterSourceDriver *) s;
   GlobalConfig *cfg = log_pipe_get_config(s);
 
@@ -362,6 +403,8 @@ afinter_sd_init(LogPipe *s)
 static gboolean
 afinter_sd_deinit(LogPipe *s)
 {
+  fprintf(stderr,"@@@@@@@@@@ yippikaye CALLED:%s\n",__func__);
+
   AFInterSourceDriver *self = (AFInterSourceDriver *) s;
 
   if (self->source)
@@ -381,6 +424,8 @@ afinter_sd_deinit(LogPipe *s)
 static void
 afinter_sd_free(LogPipe *s)
 {
+  fprintf(stderr,"@@@@@@@@@@ yippikaye CALLED:%s\n",__func__);
+
   AFInterSourceDriver *self = (AFInterSourceDriver *) s;
 
   g_assert(!self->source);
@@ -391,6 +436,7 @@ afinter_sd_free(LogPipe *s)
 LogDriver *
 afinter_sd_new(GlobalConfig *cfg)
 {
+  fprintf(stderr,"@@@@@@@@@@ yippikaye CALLED:%s\n",__func__);
   AFInterSourceDriver *self = g_new0(AFInterSourceDriver, 1);
 
   log_src_driver_init_instance((LogSrcDriver *)&self->super, cfg);
