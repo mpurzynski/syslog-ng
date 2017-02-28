@@ -194,13 +194,13 @@ periodic_timer_handle(void *p)
   AFInterSource *self = (AFInterSource *) p;
 
   fprintf(stderr, "@@@@@@@@@@@ yippikaye TIMER FUN :):):):) %s\n", __func__);
-  // if timer is not registered (i.e. expired) set up expire time and register it again
   
-  // new message, log_msg_new_*
-  msg = log_msg_new_internal(1, "@@@@@ yippikaye MY MESSAGE FOR YOU");
-  log_source_post(&self->super, msg);
-  update_and_run_periodic_timer(self);
-
+  if(self->super.options->periodic_message)
+  {
+    msg = log_msg_new_internal(1, self->super.options->periodic_message);
+    log_source_post(&self->super, msg);
+    update_and_run_periodic_timer(self);
+  }
 }
 
 static void
@@ -386,6 +386,9 @@ afinter_sd_init(LogPipe *s)
       return FALSE;
     }
 
+  if(self->source_options.periodic_message)
+    fprintf(stderr, "@@@@@@@@ yippikaye periodic_message:%s,%s\n", __func__, self->source_options.periodic_message);
+
   log_source_options_init(&self->source_options, cfg, self->super.super.group);
   self->source = afinter_source_new(self, &self->source_options);
   log_pipe_append(&self->source->super, s);
@@ -418,6 +421,8 @@ afinter_sd_deinit(LogPipe *s)
   if (!log_src_driver_deinit_method(s))
     return FALSE;
 
+  // todo: free memory pointed by periodic_message  
+
   return TRUE;
 }
 
@@ -444,6 +449,7 @@ afinter_sd_new(GlobalConfig *cfg)
   self->super.super.super.deinit = afinter_sd_deinit;
   self->super.super.super.free_fn = afinter_sd_free;
   log_source_options_defaults(&self->source_options);
+  
   return (LogDriver *)&self->super.super;
 }
 
