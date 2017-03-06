@@ -91,6 +91,7 @@ static GStaticMutex internal_mark_target_lock = G_STATIC_MUTEX_INIT;
 struct _AFInterSource
 {
   LogSource super;
+  LogTemplate *afinter_template;
   gint mark_freq;
   struct iv_event post;
   struct iv_event schedule_wakeup;
@@ -170,6 +171,22 @@ afinter_source_wakeup(LogSource *s)
     iv_event_post(&self->schedule_wakeup);
 }
 
+static LogMessage*
+give_me_a_massage(const gchar* massage_text) // :)
+{
+  LogMessage *msg = NULL;
+  msg = log_msg_new_empty();
+  if(msg)
+  {
+    if(massage_text)
+    {
+      log_msg_set_value(msg, LM_V_MESSAGE, massage_text, -1);
+    }
+    log_msg_set_value(msg, LM_V_MSGID, "yippikaye_msgid", -1);
+  }
+  return msg;
+}
+
 static void
 update_and_run_periodic_timer(AFInterSource *self)
 {
@@ -190,17 +207,66 @@ update_and_run_periodic_timer(AFInterSource *self)
 static void
 periodic_timer_handle(void *p)
 {
-  LogMessage *msg;
   AFInterSource *self = (AFInterSource *) p;
+  LogMessage *msg = NULL;
+  LogTemplate *my_template = NULL;
+  const gchar *context_id = NULL;
+  gchar* template_string = "simon-mondja-nagyfeju";
+  GError *my_gerror = NULL;
+  gboolean success = FALSE;
+  GString *GSresult = g_string_new("");
+
 
   fprintf(stderr, "@@@@@@@@@@@ yippikaye TIMER FUN :):):):) %s\n", __func__);
-  
+
   if(self->super.options->periodic_message)
   {
-    msg = log_msg_new_internal(1, self->super.options->periodic_message);
-    log_source_post(&self->super, msg);
-    update_and_run_periodic_timer(self);
+    msg = give_me_a_massage(self->super.options->periodic_message);
   }
+  else
+  {
+    msg = give_me_a_massage(NULL);
+    // template stuff
+    my_template = log_template_new(self->super.super.cfg, "afinter-template");
+    if(my_template)
+    {
+      success = log_template_compile(my_template, template_string, &my_gerror);
+      if(success == TRUE)
+      {
+        fprintf(stderr, "@@@@@@@@@@@ yippikaye template formatting %s\n", __func__);
+        log_template_format(my_template, msg, NULL, LTZ_LOCAL, 1, context_id, GSresult);
+        log_msg_set_value(msg, LM_V_MESSAGE, GSresult->str, -1);
+        g_string_free(GSresult, TRUE);
+      }
+    }
+  }
+  log_source_post(&self->super, msg);
+  update_and_run_periodic_timer(self);
+}
+
+static LogTemplate*
+init_afinter_template(AFInterSource *self)
+{
+  LogTemplate *my_template = NULL;
+  gchar* template_string = "simon-mondja";
+  //const gchar *context_id = NULL;
+  GError *my_gerror = NULL;
+  gboolean success = FALSE;
+  //GString *GSresult = g_string_new("");
+
+  my_template = log_template_new(self->super.super.cfg, "afinter-template");
+  if(my_template)
+  {
+    success = log_template_compile(my_template, template_string, &my_gerror);
+    if(success == TRUE)
+    {
+      fprintf(stderr, "@@@@@@@@@@@ yippikaye template compiled %s\n", __func__);
+      // log_template_format(my_template, msg, NULL, LTZ_LOCAL, 1, context_id, GSresult);
+      // log_msg_set_value(msg, LM_V_MESSAGE, GSresult->str, -1);
+      // g_string_free(GSresult, TRUE);
+    }
+  }
+  return my_template;
 }
 
 static void
@@ -222,7 +288,6 @@ afinter_source_init_watches(AFInterSource *self)
   IV_TIMER_INIT(&self->periodic_timer);
   self->periodic_timer.cookie = self;
   self->periodic_timer.handler = periodic_timer_handle;
-  update_and_run_periodic_timer(self); 
 }
 
 static void
@@ -310,6 +375,8 @@ afinter_source_update_watches(AFInterSource *self)
 static gboolean
 afinter_source_init(LogPipe *s)
 {
+  fprintf(stderr,"@@@@@@@@@@ yippikaye source init CALLED:%s\n",__func__);
+
   AFInterSource *self = (AFInterSource *) s;
   GlobalConfig *cfg = log_pipe_get_config(s);
 
@@ -330,6 +397,10 @@ afinter_source_init(LogPipe *s)
   g_static_mutex_lock(&internal_msg_lock);
   current_internal_source = self;
   g_static_mutex_unlock(&internal_msg_lock);
+
+  // self->afinter_template = init_afinter_template(self);
+
+  update_and_run_periodic_timer(self);
 
   return TRUE;
 }
@@ -365,6 +436,8 @@ afinter_source_new(AFInterSourceDriver *owner, LogSourceOptions *options)
   self->super.super.init = afinter_source_init;
   self->super.super.deinit = afinter_source_deinit;
   self->super.wakeup = afinter_source_wakeup;
+
+  self->afinter_template = NULL;
   return &self->super;
 }
 
@@ -421,7 +494,7 @@ afinter_sd_deinit(LogPipe *s)
   if (!log_src_driver_deinit_method(s))
     return FALSE;
 
-  // todo: free memory pointed by periodic_message  
+  // todo: free memory pointed by periodic_message
 
   return TRUE;
 }
@@ -449,7 +522,7 @@ afinter_sd_new(GlobalConfig *cfg)
   self->super.super.super.deinit = afinter_sd_deinit;
   self->super.super.super.free_fn = afinter_sd_free;
   log_source_options_defaults(&self->source_options);
-  
+
   return (LogDriver *)&self->super.super;
 }
 
