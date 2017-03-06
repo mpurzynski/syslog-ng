@@ -408,6 +408,7 @@ log_source_options_defaults(LogSourceOptions *options)
   options->host_override_len = -1;
   options->tags = NULL;
   options->periodic_message = NULL;
+  options->template_text = NULL;
   host_resolve_options_defaults(&options->host_resolve_options);
 }
 

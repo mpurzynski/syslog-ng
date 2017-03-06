@@ -217,7 +217,9 @@ periodic_timer_handle(void *p)
 
   if(self->super.options->periodic_message)
   {
+    fprintf(stderr, "@@@@@@@@@@@ yippikaye periodic message!! %s\n", __func__);
     msg = give_me_a_massage(self->super.options->periodic_message);
+    log_source_post(&self->super, msg);
   }
   else if(self->afinter_template)
   {
@@ -225,13 +227,13 @@ periodic_timer_handle(void *p)
     // template stuff
     if(self->template_compiled)
     {
-      fprintf(stderr, "@@@@@@@@@@@ yippikaye template formatting++ %s\n", __func__);
+      fprintf(stderr, "@@@@@@@@@@@ yippikaye template formatting %s\n", __func__);
       log_template_format(self->afinter_template, msg, NULL, LTZ_LOCAL, 1, context_id, GSresult);
       log_msg_set_value(msg, LM_V_MESSAGE, GSresult->str, -1);
       g_string_free(GSresult, TRUE);
+      log_source_post(&self->super, msg);
     }
   }
-  log_source_post(&self->super, msg);
   update_and_run_periodic_timer(self);
 }
 
@@ -239,14 +241,13 @@ static LogTemplate*
 init_afinter_template(AFInterSource *self)
 {
   LogTemplate *my_template = NULL;
-  gchar* template_string = "i-am-your-template";
   GError *my_gerror = NULL;
   gboolean success = FALSE;
 
   my_template = log_template_new(self->super.super.cfg, "afinter-template");
-  if(my_template)
+  if(my_template && self->super.options->template_text)
   {
-    success = log_template_compile(my_template, template_string, &my_gerror);
+    success = log_template_compile(my_template, self->super.options->template_text, &my_gerror);
     if(success == TRUE)
     {
       fprintf(stderr, "@@@@@@@@@@@ yippikaye template compiled %s\n", __func__);
@@ -385,7 +386,8 @@ afinter_source_init(LogPipe *s)
   current_internal_source = self;
   g_static_mutex_unlock(&internal_msg_lock);
 
-  self->afinter_template = init_afinter_template(self);
+  if(self->super.options->template_text)
+    self->afinter_template = init_afinter_template(self);
 
   update_and_run_periodic_timer(self);
 
@@ -448,7 +450,7 @@ afinter_sd_init(LogPipe *s)
     }
 
   if(self->source_options.periodic_message)
-    fprintf(stderr, "@@@@@@@@ yippikaye periodic_message:%s,%s\n", __func__, self->source_options.periodic_message);
+    fprintf(stderr, "@@@@@@@@ yippikaye config w periodic_message:%s,%s\n", __func__, self->source_options.periodic_message);
 
   log_source_options_init(&self->source_options, cfg, self->super.super.group);
   self->source = afinter_source_new(self, &self->source_options);

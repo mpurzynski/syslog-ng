@@ -227,6 +227,7 @@ extern struct _StatsOptions *last_stats_options;
 %token KW_PROGRAM_OVERRIDE            10165
 %token KW_HOST_OVERRIDE               10166
 %token KW_PERIODIC_MSG                10167
+%token KW_TEMPLATE_TEXT               10168
 
 %token KW_THROTTLE                    10170
 %token KW_THREADED                    10171
@@ -1031,7 +1032,8 @@ parser_opt
 source_option
         /* NOTE: plugins need to set "last_source_options" in order to incorporate this rule in their grammar */
 	: KW_LOG_IW_SIZE '(' positive_integer ')'	{ last_source_options->init_window_size = $3; }
-	| KW_PERIODIC_MSG '(' string ')'    { last_source_options->periodic_message = g_strdup($3); free($3); }
+    | KW_PERIODIC_MSG '(' string ')'    { last_source_options->periodic_message = g_strdup($3); free($3); }
+    | KW_TEMPLATE_TEXT '(' string ')'   { last_source_options->template_text    = g_strdup($3); free($3); }
 	| KW_CHAIN_HOSTNAMES '(' yesno ')'	{ last_source_options->chain_hostnames = $3; }
 	| KW_KEEP_HOSTNAME '(' yesno ')'	{ last_source_options->keep_hostname = $3; }
 	| KW_PROGRAM_OVERRIDE '(' string ')'	{ last_source_options->program_override = g_strdup($3); free($3); }

@@ -43,6 +43,7 @@ typedef struct _LogSourceOptions
   LogTagId source_group_tag;
   GArray *tags;
   gchar *periodic_message;
+  gchar *template_text;
 } LogSourceOptions;
 
 typedef struct _LogSource LogSource;

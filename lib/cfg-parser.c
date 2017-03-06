@@ -131,6 +131,7 @@ static CfgLexerKeyword main_keywords[] =
   { "host_override",      KW_HOST_OVERRIDE },
   { "throttle",           KW_THROTTLE },
   { "periodic_msg",       KW_PERIODIC_MSG },
+  { "template_text",      KW_TEMPLATE_TEXT },
 
   { "create_dirs",        KW_CREATE_DIRS },
   { "optional",           KW_OPTIONAL },
