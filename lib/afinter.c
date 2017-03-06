@@ -92,6 +92,7 @@ struct _AFInterSource
 {
   LogSource super;
   LogTemplate *afinter_template;
+  gboolean template_compiled;
   gint mark_freq;
   struct iv_event post;
   struct iv_event schedule_wakeup;
@@ -209,13 +210,8 @@ periodic_timer_handle(void *p)
 {
   AFInterSource *self = (AFInterSource *) p;
   LogMessage *msg = NULL;
-  LogTemplate *my_template = NULL;
   const gchar *context_id = NULL;
-  gchar* template_string = "simon-mondja-nagyfeju";
-  GError *my_gerror = NULL;
-  gboolean success = FALSE;
   GString *GSresult = g_string_new("");
-
 
   fprintf(stderr, "@@@@@@@@@@@ yippikaye TIMER FUN :):):):) %s\n", __func__);
 
@@ -223,21 +219,16 @@ periodic_timer_handle(void *p)
   {
     msg = give_me_a_massage(self->super.options->periodic_message);
   }
-  else
+  else if(self->afinter_template)
   {
     msg = give_me_a_massage(NULL);
     // template stuff
-    my_template = log_template_new(self->super.super.cfg, "afinter-template");
-    if(my_template)
+    if(self->template_compiled)
     {
-      success = log_template_compile(my_template, template_string, &my_gerror);
-      if(success == TRUE)
-      {
-        fprintf(stderr, "@@@@@@@@@@@ yippikaye template formatting %s\n", __func__);
-        log_template_format(my_template, msg, NULL, LTZ_LOCAL, 1, context_id, GSresult);
-        log_msg_set_value(msg, LM_V_MESSAGE, GSresult->str, -1);
-        g_string_free(GSresult, TRUE);
-      }
+      fprintf(stderr, "@@@@@@@@@@@ yippikaye template formatting++ %s\n", __func__);
+      log_template_format(self->afinter_template, msg, NULL, LTZ_LOCAL, 1, context_id, GSresult);
+      log_msg_set_value(msg, LM_V_MESSAGE, GSresult->str, -1);
+      g_string_free(GSresult, TRUE);
     }
   }
   log_source_post(&self->super, msg);
@@ -248,11 +239,9 @@ static LogTemplate*
 init_afinter_template(AFInterSource *self)
 {
   LogTemplate *my_template = NULL;
-  gchar* template_string = "simon-mondja";
-  //const gchar *context_id = NULL;
+  gchar* template_string = "i-am-your-template";
   GError *my_gerror = NULL;
   gboolean success = FALSE;
-  //GString *GSresult = g_string_new("");
 
   my_template = log_template_new(self->super.super.cfg, "afinter-template");
   if(my_template)
@@ -261,9 +250,7 @@ init_afinter_template(AFInterSource *self)
     if(success == TRUE)
     {
       fprintf(stderr, "@@@@@@@@@@@ yippikaye template compiled %s\n", __func__);
-      // log_template_format(my_template, msg, NULL, LTZ_LOCAL, 1, context_id, GSresult);
-      // log_msg_set_value(msg, LM_V_MESSAGE, GSresult->str, -1);
-      // g_string_free(GSresult, TRUE);
+      self->template_compiled = TRUE;
     }
   }
   return my_template;
@@ -398,7 +385,7 @@ afinter_source_init(LogPipe *s)
   current_internal_source = self;
   g_static_mutex_unlock(&internal_msg_lock);
 
-  // self->afinter_template = init_afinter_template(self);
+  self->afinter_template = init_afinter_template(self);
 
   update_and_run_periodic_timer(self);
 
@@ -438,6 +425,7 @@ afinter_source_new(AFInterSourceDriver *owner, LogSourceOptions *options)
   self->super.wakeup = afinter_source_wakeup;
 
   self->afinter_template = NULL;
+  self->template_compiled = FALSE;
   return &self->super;
 }
 
