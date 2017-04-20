@@ -35,7 +35,16 @@ cparser_process(LogParser *s, LogMessage **pmsg,
                 const LogPathOptions *path_options,
                 const gchar *input, gsize input_len)
 {
+  CParser *self = (CParser *) s;
+  LogMessage *msg;
+  char* name = "foo";
+  char* value= "foovalue";
   fprintf(stderr,"******** yippikaye: %s********\n", __func__);
+
+  fprintf(stderr,"input string: %s\n", input);
+
+  msg = log_msg_make_writable(pmsg, path_options);
+  log_msg_set_value_by_name(msg, name, value, strlen(value));
   return TRUE;
 }
 
@@ -43,8 +52,8 @@ static void
 cparser_free(LogPipe *s)
 {
   CParser *self = (CParser *) s;
-
   fprintf(stderr,"******** yippikaye: %s********\n", __func__);
+
   log_parser_free_method(s);
 }
 
