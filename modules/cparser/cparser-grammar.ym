@@ -28,6 +28,7 @@
 
 %code {
 
+#include "cparser.h"
 #include "cfg-parser.h"
 #include "cparser-grammar.h"
 #include "syslog-names.h"
@@ -46,19 +47,27 @@
 
 %lex-param {CfgLexer *lexer}
 %parse-param {CfgLexer *lexer}
-%parse-param {LogDriver **instance}
+%parse-param {LogParser **instance}
 %parse-param {gpointer arg}
 
 /* INCLUDE_DECLS */
 
+%token KW_CPARSER
+
+%type	<ptr> parser_cparser_rule
+
 %%
 
 start
-  : LL_CONTEXT_PARSER first_rule          { YYACCEPT; }
+  : LL_CONTEXT_PARSER parser_cparser_rule { YYACCEPT; }
   ;
 
-first_rule
-  :
+parser_cparser_rule
+  : KW_CPARSER '('
+    {
+      last_parser = *instance = (LogParser *) cparser_new(configuration);
+    }
+    ')'					{ $$ = last_parser; }
   ;
 
 /* INCLUDE_RULES */

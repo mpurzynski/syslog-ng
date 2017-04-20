@@ -27,10 +27,11 @@
 
 extern int cparser_debug;
 
-int cparser_parse(CfgLexer *lexer, LogDriver **instance, gpointer arg);
+int cparser_parse(CfgLexer *lexer, LogParser **instance, gpointer arg);
 
 static CfgLexerKeyword cparser_keywords[] =
 {
+  { "cparser",          KW_CPARSER },
   { NULL }
 };
 
@@ -45,5 +46,5 @@ CfgParser cparser_parser =
   .cleanup = (void (*)(gpointer)) log_pipe_unref,
 };
 
-CFG_PARSER_IMPLEMENT_LEXER_BINDING(cparser_, LogDriver **)
+CFG_PARSER_IMPLEMENT_LEXER_BINDING(cparser_, LogParser **)
 

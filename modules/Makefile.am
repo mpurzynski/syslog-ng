@@ -19,6 +19,7 @@ include modules/cryptofuncs/Makefile.am
 include modules/dbparser/Makefile.am
 include modules/json/Makefile.am
 include modules/geoip/Makefile.am
+include modules/cparser/Makefile.am
 include modules/afstomp/Makefile.am
 include modules/redis/Makefile.am
 include modules/pseudofile/Makefile.am
@@ -44,7 +45,7 @@ SYSLOG_NG_MODULES	=	\
 	mod-usertty mod-amqp mod-mongodb mod-smtp mod-http mod-json \
 	mod-syslogformat mod-linux-kmsg mod-pacctformat \
 	mod-confgen mod-system-source mod-csvparser mod-dbparser \
-	mod-basicfuncs mod-cryptofuncs mod-geoip mod-afstomp \
+	mod-basicfuncs mod-cryptofuncs mod-geoip mod-cparser mod-afstomp \
 	mod-redis mod-pseudofile mod-graphite mod-riemann \
 	mod-python mod-java mod-java-modules mod-kvformat mod-date \
 	mod-native mod-cef mod-add-contextual-data mod-diskq mod-getent \

@@ -1,5 +1,7 @@
 module_LTLIBRARIES      += modules/cparser/libcparser.la
 modules_cparser_libcparser_la_SOURCES = \
+  modules/cparser/cparser.c               \
+  modules/cparser/cparser.h               \
   modules/cparser/cparser-grammar.y       \
   modules/cparser/cparser-parser.c        \
   modules/cparser/cparser-parser.h        \

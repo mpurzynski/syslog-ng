@@ -25,11 +25,13 @@
 
 #include "cfg-parser.h"
 #include "cfg-lexer.h"
-#include "driver.h"
+//#include "driver.h"
+//#include "parser.h"
+#include "parser/parser-expr.h"
 
 extern CfgParser cparser_parser;
 
-CFG_PARSER_DECLARE_LEXER_BINDING(cparser_, LogDriver **)
+CFG_PARSER_DECLARE_LEXER_BINDING(cparser_, LogParser **)
 
 #endif
 
