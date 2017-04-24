@@ -1,4 +1,5 @@
 SCL_SUBDIRS	= \
+	snmp-source \
 	system		\
 	pacct		\
 	syslogconf	\
