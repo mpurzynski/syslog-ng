@@ -49,13 +49,37 @@ snmptrapd_parser_process(LogParser *s, LogMessage **pmsg,
   return TRUE;
 }
 
+static LogPipe*
+snmptrapd_parser_clone(LogPipe *s)
+{
+  SnmpTrapdParser *self = (SnmpTrapdParser *) s;
+  SnmpTrapdParser *cloned;
+
+  cloned = (SnmpTrapdParser *) snmptrapd_parser_new(s->cfg);
+
+  snmptrapd_parser_set_prefix(&cloned->super, self->prefix);
+  log_parser_set_template(&cloned->super, log_template_ref(self->super.template));
+
+  return &cloned->super.super;
+}
+
 static void
 snmptrapd_parser_free(LogPipe *s)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
 
+  g_free(self->prefix);
   log_parser_free_method(s);
 }
+
+static gboolean
+snmptrapd_parser_init(LogPipe *s)
+{
+  SnmpTrapdParser *self = (SnmpTrapdParser *) s;
+
+  return log_parser_init_method(s);
+}
+
 
 LogParser*
 snmptrapd_parser_new(GlobalConfig *cfg)
@@ -63,10 +87,10 @@ snmptrapd_parser_new(GlobalConfig *cfg)
   SnmpTrapdParser *self = g_new0(SnmpTrapdParser, 1);
 
   log_parser_init_instance(&self->super, cfg);
-  //self->super.super.init = snmptrapd_parser_init;
+  self->super.super.init = snmptrapd_parser_init;
   //self->super.super.deinit = snmptrapd_parser_deinit;
   self->super.super.free_fn = snmptrapd_parser_free;
-  //self->super.super.clone = snmptrapd_parser_clone;
+  self->super.super.clone = snmptrapd_parser_clone;
   self->super.process = snmptrapd_parser_process;
 
   return &self->super;

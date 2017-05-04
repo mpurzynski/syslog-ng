@@ -28,6 +28,7 @@
 
 %code {
 
+#include "snmptrapd-parser.h"
 #include "cfg-parser.h"
 #include "snmptrapd-parser-grammar.h"
 #include "syslog-names.h"
@@ -46,20 +47,40 @@
 
 %lex-param {CfgLexer *lexer}
 %parse-param {CfgLexer *lexer}
-%parse-param {LogDriver **instance}
+%parse-param {LogParser **instance}
 %parse-param {gpointer arg}
 
 /* INCLUDE_DECLS */
 
+%token KW_SNMPTRAPD_PARSER
+%token KW_PREFIX
+
+%type	<ptr> parser_expr_snmptrapd
+
 %%
 
 start
-  : LL_CONTEXT_PARSER first_rule          { YYACCEPT; }
-  ;
+        : LL_CONTEXT_PARSER parser_expr_snmptrapd  { YYACCEPT; }
+        ;
 
-first_rule
-  :
-  ;
+parser_expr_snmptrapd
+        : KW_SNMPTRAPD_PARSER '('
+          {
+            last_parser = *instance = (LogParser *) snmptrapd_parser_new(configuration);
+          }
+          snmptrapd_parser_options ')'					{ $$ = last_parser; }
+        ;
+
+snmptrapd_parser_options
+        : snmptrapd_parser_option snmptrapd_parser_options
+        |
+        ;
+
+snmptrapd_parser_option
+        : KW_PREFIX '(' string ')'              { snmptrapd_parser_set_prefix(last_parser, $3); free($3); }
+        | parser_opt
+        ;
+
 
 /* INCLUDE_RULES */
 

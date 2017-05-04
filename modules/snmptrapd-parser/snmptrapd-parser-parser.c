@@ -20,16 +20,18 @@
  *
  */
 
-#include "driver.h"
+#include "snmptrapd-parser.h"
 #include "cfg-parser.h"
 #include "snmptrapd-parser-grammar.h"
 
 extern int snmptrapd_parser_debug;
 
-int snmptrapd_parser_parse(CfgLexer *lexer, LogDriver **instance, gpointer arg);
+int snmptrapd_parser_parse(CfgLexer *lexer, LogParser **instance, gpointer arg);
 
 static CfgLexerKeyword snmptrapd_parser_keywords[] =
 {
+  { "snmptrapd_parser",  KW_SNMPTRAPD_PARSER },
+  { "prefix",            KW_PREFIX },
   { NULL }
 };
 
@@ -44,5 +46,5 @@ CfgParser snmptrapd_parser_parser =
   .cleanup = (void (*)(gpointer)) log_pipe_unref,
 };
 
-CFG_PARSER_IMPLEMENT_LEXER_BINDING(snmptrapd_parser_, LogDriver **)
+CFG_PARSER_IMPLEMENT_LEXER_BINDING(snmptrapd_parser_, LogParser **)
 

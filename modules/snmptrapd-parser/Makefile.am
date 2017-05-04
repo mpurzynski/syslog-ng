@@ -1,5 +1,7 @@
 module_LTLIBRARIES      += modules/snmptrapd-parser/libsnmptrapd-parser.la
 modules_snmptrapd_parser_libsnmptrapd_parser_la_SOURCES = \
+  modules/snmptrapd-parser/snmptrapd-parser.c               \
+  modules/snmptrapd-parser/snmptrapd-parser.h               \
   modules/snmptrapd-parser/snmptrapd-parser-grammar.y       \
   modules/snmptrapd-parser/snmptrapd-parser-parser.c        \
   modules/snmptrapd-parser/snmptrapd-parser-parser.h        \

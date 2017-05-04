@@ -25,11 +25,11 @@
 
 #include "cfg-parser.h"
 #include "cfg-lexer.h"
-#include "driver.h"
+#include "parser/parser-expr.h"
 
 extern CfgParser snmptrapd_parser_parser;
 
-CFG_PARSER_DECLARE_LEXER_BINDING(snmptrapd_parser_, LogDriver **)
+CFG_PARSER_DECLARE_LEXER_BINDING(snmptrapd_parser_, LogParser **)
 
 #endif
 

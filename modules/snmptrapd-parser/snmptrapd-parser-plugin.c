@@ -45,9 +45,9 @@ snmptrapd_parser_module_init(GlobalConfig *cfg, CfgArgs *args)
 const ModuleInfo module_info =
 {
   .canonical_name = "snmptrapd_parser",
-  .version = VERSION,
-  .description = "Please fill this description",
-  .core_revision = SOURCE_REVISION,
+  .version = SYSLOG_NG_VERSION,
+  .description = "The snmptrapd module provides parsing support for snmptrapd output in syslog-ng",
+  .core_revision = SYSLOG_NG_SOURCE_REVISION,
   .plugins = snmptrapd_parser_plugins,
   .plugins_len = G_N_ELEMENTS(snmptrapd_parser_plugins),
 };
