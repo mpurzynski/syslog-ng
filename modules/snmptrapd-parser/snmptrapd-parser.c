@@ -57,9 +57,8 @@ snmptrapd_parser_get_template_options(LogParser *s)
 }
 
 static gboolean
-snmptrapd_parser_process(LogParser *s, LogMessage **pmsg,
-                const LogPathOptions *path_options,
-                const gchar *input, gsize input_len)
+snmptrapd_parser_process(LogParser *s, LogMessage **pmsg, const LogPathOptions *path_options,
+                         const gchar *input, gsize input_len)
 {
   return TRUE;
 }
@@ -68,9 +67,8 @@ static LogPipe*
 snmptrapd_parser_clone(LogPipe *s)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
-  SnmpTrapdParser *cloned;
 
-  cloned = (SnmpTrapdParser *) snmptrapd_parser_new(s->cfg);
+  SnmpTrapdParser *cloned = (SnmpTrapdParser *) snmptrapd_parser_new(s->cfg);
 
   snmptrapd_parser_set_prefix(&cloned->super, self->prefix);
   snmptrapd_parser_set_message_template(&cloned->super, self->message_template);
@@ -113,7 +111,6 @@ snmptrapd_parser_new(GlobalConfig *cfg)
 
   log_parser_init_instance(&self->super, cfg);
   self->super.super.init = snmptrapd_parser_init;
-  //self->super.super.deinit = snmptrapd_parser_deinit;
   self->super.super.free_fn = snmptrapd_parser_free;
   self->super.super.clone = snmptrapd_parser_clone;
   self->super.process = snmptrapd_parser_process;
