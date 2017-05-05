@@ -39,6 +39,10 @@ snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix)
 
   g_free(self->prefix);
   self->prefix = g_strdup(prefix);
+
+  msg_trace("snmptrapd_parser_set_prefix", evt_tag_str("prefix", self->prefix));
+}
+
 void
 snmptrapd_parser_set_message_template(LogParser *s, LogTemplate *message_template)
 {
@@ -46,6 +50,8 @@ snmptrapd_parser_set_message_template(LogParser *s, LogTemplate *message_templat
 
   log_template_unref(self->message_template);
   self->message_template = log_template_ref(message_template);
+
+  msg_trace("snmptrapd_parser_set_message_template", evt_tag_str("message_template", self->message_template->template));
 }
 
 LogTemplateOptions *
@@ -75,6 +81,8 @@ snmptrapd_parser_clone(LogPipe *s)
 
   /* log_parser_clone_method() is missing.. */
   log_parser_set_template(&cloned->super, log_template_ref(self->super.template));
+
+  msg_trace("snmptrapd_parser_clone");
 
   return &cloned->super.super;
 }
