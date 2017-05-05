@@ -29,8 +29,8 @@ typedef struct _SnmpTrapdParser
   LogParser super;
   gchar *prefix;
   LogTemplate *message_template;
-  LogTemplateOptions message_template_options;
-}SnmpTrapdParser;
+  LogTemplateOptions template_options;
+} SnmpTrapdParser;
 
 void 
 snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix)
@@ -39,6 +39,21 @@ snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix)
 
   g_free(self->prefix);
   self->prefix = g_strdup(prefix);
+void
+snmptrapd_parser_set_message_template(LogParser *s, LogTemplate *message_template)
+{
+  SnmpTrapdParser *self = (SnmpTrapdParser *) s;
+
+  log_template_unref(self->message_template);
+  self->message_template = log_template_ref(message_template);
+}
+
+LogTemplateOptions *
+snmptrapd_parser_get_template_options(LogParser *s)
+{
+  SnmpTrapdParser *self = (SnmpTrapdParser *) s;
+
+  return &self->template_options;
 }
 
 static gboolean
@@ -68,7 +83,11 @@ snmptrapd_parser_free(LogPipe *s)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
 
+  log_template_options_destroy(&self->template_options);
+
   g_free(self->prefix);
+  log_template_unref(self->message_template);
+
   log_parser_free_method(s);
 }
 
@@ -76,6 +95,9 @@ static gboolean
 snmptrapd_parser_init(LogPipe *s)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
+  GlobalConfig *cfg = log_pipe_get_config(s);
+
+  log_template_options_init(&self->template_options, cfg);
 
   return log_parser_init_method(s);
 }
@@ -92,6 +114,8 @@ snmptrapd_parser_new(GlobalConfig *cfg)
   self->super.super.free_fn = snmptrapd_parser_free;
   self->super.super.clone = snmptrapd_parser_clone;
   self->super.process = snmptrapd_parser_process;
+
+  log_template_options_defaults(&self->template_options);
 
   return &self->super;
 }

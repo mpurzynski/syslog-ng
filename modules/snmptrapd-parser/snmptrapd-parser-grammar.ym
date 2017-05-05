@@ -54,6 +54,7 @@
 
 %token KW_SNMPTRAPD_PARSER
 %token KW_PREFIX
+%token KW_MESSAGE_TEMPLATE
 
 %type	<ptr> parser_expr_snmptrapd
 
@@ -78,6 +79,12 @@ snmptrapd_parser_options
 
 snmptrapd_parser_option
         : KW_PREFIX '(' string ')'              { snmptrapd_parser_set_prefix(last_parser, $3); free($3); }
+        | KW_MESSAGE_TEMPLATE '(' template_content ')'
+          {
+            snmptrapd_parser_set_message_template(last_parser, $3);
+            log_template_unref($3);
+          }
+        | { last_template_options = snmptrapd_parser_get_template_options(last_parser); } template_option
         | parser_opt
         ;
 
