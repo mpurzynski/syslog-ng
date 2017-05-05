@@ -32,7 +32,7 @@ typedef struct _SnmpTrapdParser
   LogTemplateOptions template_options;
 } SnmpTrapdParser;
 
-void 
+void
 snmptrapd_parser_set_prefix(LogParser *s, const gchar *prefix)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
@@ -69,7 +69,7 @@ snmptrapd_parser_process(LogParser *s, LogMessage **pmsg, const LogPathOptions *
   return TRUE;
 }
 
-static LogPipe*
+static LogPipe *
 snmptrapd_parser_clone(LogPipe *s)
 {
   SnmpTrapdParser *self = (SnmpTrapdParser *) s;
@@ -112,7 +112,7 @@ snmptrapd_parser_init(LogPipe *s)
 }
 
 
-LogParser*
+LogParser *
 snmptrapd_parser_new(GlobalConfig *cfg)
 {
   SnmpTrapdParser *self = g_new0(SnmpTrapdParser, 1);
