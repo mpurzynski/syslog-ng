@@ -73,6 +73,7 @@ snmptrapd_parser_clone(LogPipe *s)
   cloned = (SnmpTrapdParser *) snmptrapd_parser_new(s->cfg);
 
   snmptrapd_parser_set_prefix(&cloned->super, self->prefix);
+  snmptrapd_parser_set_message_template(&cloned->super, self->message_template);
 
   /* log_parser_clone_method() is missing.. */
   log_parser_set_template(&cloned->super, log_template_ref(self->super.template));
