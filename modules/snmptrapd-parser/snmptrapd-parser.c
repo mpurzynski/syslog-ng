@@ -71,6 +71,39 @@ snmptrapd_parser_get_template_options(LogParser *s)
   return &self->template_options;
 }
 
+static inline gboolean
+_is_unwanted_char(gchar c)
+{
+  return (c == ':');
+}
+
+static gchar *
+_get_formatted_normalized_key(SnmpTrapdParser *self)
+{
+  if(!self) return NULL;
+
+  gchar *truncate_pos = NULL;
+  gchar *curr_char = self->formatted_key->str;
+  while( *curr_char )
+    {
+      if( _is_unwanted_char(*curr_char) )
+        {
+          if(!truncate_pos)
+            truncate_pos = curr_char;
+        }
+      else if(truncate_pos)
+        {
+          strcpy(truncate_pos+1, curr_char);
+          *truncate_pos = '_';
+          curr_char = truncate_pos;
+          truncate_pos = NULL;
+        }
+      curr_char++;
+    }
+  self->formatted_key->len = strlen(self->formatted_key->str);
+  return self->formatted_key->str;
+}
+
 static const gchar *
 _get_formatted_key(SnmpTrapdParser *self, const gchar *key)
 {
@@ -83,6 +116,7 @@ _get_formatted_key(SnmpTrapdParser *self, const gchar *key)
     g_string_assign(self->formatted_key, self->prefix->str);
 
   g_string_append(self->formatted_key, key);
+  _get_formatted_normalized_key(self);
   return self->formatted_key->str;
 }
 
@@ -168,6 +202,8 @@ _parse_transport_info(SnmpTrapdParser *self, LogMessage *msg, const gchar **inpu
 
   const gchar *start_pos = *input;
   gchar *curr_char = strchr(start_pos, '\n');
+  if(!curr_char)
+    return FALSE;
   while(*curr_char != ']')
     {
       --curr_char;
