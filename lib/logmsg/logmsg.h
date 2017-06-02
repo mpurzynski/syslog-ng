@@ -327,6 +327,7 @@ void log_msg_refcache_start_producer(LogMessage *self);
 void log_msg_refcache_start_consumer(LogMessage *self, const LogPathOptions *path_options);
 void log_msg_refcache_stop(void);
 
+void log_msg_stats_init(void);
 void log_msg_registry_init(void);
 void log_msg_registry_deinit(void);
 void log_msg_global_init(void);

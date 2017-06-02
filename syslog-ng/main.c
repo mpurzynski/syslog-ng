@@ -270,6 +270,7 @@ main(int argc, char *argv[])
   app_startup();
   main_loop_init(main_loop, &main_loop_options);
   rc = main_loop_read_and_init_config(main_loop);
+  log_msg_stats_init();
 
   if (rc)
     {
