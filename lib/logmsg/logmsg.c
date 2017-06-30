@@ -1772,14 +1772,8 @@ log_msg_registry_foreach(GHFunc func, gpointer user_data)
   nv_registry_foreach(logmsg_registry, func, user_data);
 }
 
-void
-log_msg_global_init(void)
-{
-  log_msg_registry_init();
-}
-
-void
-log_msg_stats_global_init(void)
+static void
+log_msg_stats_init(void)
 {
   stats_lock();
   StatsClusterKey sc_key;
@@ -1795,6 +1789,13 @@ log_msg_stats_global_init(void)
   stats_cluster_single_key_set(&sc_key, SCS_GLOBAL, "msg_allocated_bytes", NULL);
   stats_register_counter(1, &sc_key, SC_TYPE_SINGLE_VALUE, &count_allocated_bytes);
   stats_unlock();
+}
+
+void
+log_msg_global_init(void)
+{
+  log_msg_registry_init();
+  log_msg_stats_init();
 }
 
 const gchar *
