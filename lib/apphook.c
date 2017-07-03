@@ -139,9 +139,25 @@ app_startup(void)
   scratch_buffers_global_init();
 }
 
+static void _stats_unregister_callback(StatsCluster *sc, gint type, StatsCounterItem *counter, gpointer user_data)
+{
+  if(!stats_check_level(counter->stats_level))
+    {
+      stats_unregister_counter((const StatsClusterKey *)&sc->key, type, &counter);
+    }
+}
+
+void stats_unregister_unallowed_counters_based_on_stat_level(void)
+{
+  stats_lock();
+  stats_foreach_counter(_stats_unregister_callback, NULL);
+  stats_unlock();
+}
+
 void
 app_finish_app_startup_after_cfg_init(void)
 {
+  stats_unregister_unallowed_counters_based_on_stat_level();
 }
 
 void
