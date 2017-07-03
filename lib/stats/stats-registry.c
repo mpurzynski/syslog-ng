@@ -51,7 +51,7 @@ stats_unlock(void)
 }
 
 static StatsCluster *
-_grab_cluster(gint stats_level, const StatsClusterKey *sc_key, gboolean dynamic)
+_grab_cluster(const StatsClusterKey *sc_key, gboolean dynamic)
 {
   StatsCluster *sc;
 
@@ -84,11 +84,12 @@ _register_counter(gint stats_level, const StatsClusterKey *sc_key, gint type,
 
   g_assert(stats_locked);
 
-  sc = _grab_cluster(stats_level, sc_key, dynamic);
+  sc = _grab_cluster(sc_key, dynamic);
   if (sc)
     {
       *counter = stats_cluster_track_counter(sc, type);
       (*counter)->type = type;
+      (*counter)->stats_level = stats_level;
     }
   else
     {
