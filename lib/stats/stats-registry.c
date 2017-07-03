@@ -55,9 +55,6 @@ _grab_cluster(gint stats_level, const StatsClusterKey *sc_key, gboolean dynamic)
 {
   StatsCluster *sc;
 
-  if (!stats_check_level(stats_level))
-    return NULL;
-
   sc = g_hash_table_lookup(stats_cluster_container, sc_key);
   if (!sc)
     {
