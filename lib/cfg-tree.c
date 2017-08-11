@@ -123,8 +123,10 @@ log_expr_node_append_tail(LogExprNode *a, LogExprNode *b)
       while (p->next)
         p = p->next;
       log_expr_node_append(p, b);
+      fprintf(stderr, "%s\n a: %p, b: %p, p: %p \n", __FUNCTION__, a, b, p);
       return a;
     }
+  fprintf(stderr, "%s\n a: %p, b: %p \n", __FUNCTION__, a, b);
   return b;
 }
 
@@ -214,6 +216,23 @@ log_expr_node_set_aux(LogExprNode *self, gpointer aux, GDestroyNotify destroy)
   self->aux_destroy = destroy;
 }
 
+
+void
+__log_expr_node_print_node_info(LogExprNode *self, const char *caller_func)
+{
+  gchar buf[128];
+  fprintf(stderr, "%s  LogExprNode: %p,\n  name: %s  content: %s  layout: %s  location: %s",
+          caller_func,
+          self,
+          self->name,
+          log_expr_node_get_content_name(self->content),
+          log_expr_node_get_layout_name(self->layout),
+          log_expr_node_format_location(self, buf, sizeof(buf)));
+  fprintf(stderr, "  parent: %p", self->parent);
+  fprintf(stderr, "  next: %p", self->next);
+  fprintf(stderr, "  children: %p\n", self->children);
+}
+
 /**
  * log_expr_node_new:
  * @layout: layout of the children (ENL_*)
@@ -243,6 +262,7 @@ log_expr_node_new(gint layout, gint content, const gchar *name, LogExprNode *chi
       self->line = yylloc->first_line;
       self->column = yylloc->first_column;
     }
+  //__log_expr_node_print_node_info(self, __func__);
   return self;
 }
 
@@ -891,8 +911,6 @@ cfg_tree_compile_node(CfgTree *self, LogExprNode *node,
   gboolean result = FALSE;
   static gint indent = -1;
 
-  if (debug_flag)
-    {
       gchar buf[128];
       gchar compile_message[256];
 
@@ -905,7 +923,6 @@ cfg_tree_compile_node(CfgTree *self, LogExprNode *node,
                  log_expr_node_get_content_name(node->content),
                  log_expr_node_format_location(node, buf, sizeof(buf)));
       msg_send_formatted_message(EVT_PRI_DEBUG, compile_message);
-    }
 
   switch (node->layout)
     {
@@ -964,6 +981,8 @@ gboolean
 cfg_tree_add_object(CfgTree *self, LogExprNode *rule)
 {
   gboolean res = TRUE;
+
+  __log_expr_node_print_node_info(rule, __func__);
 
   if (rule->name)
     {
@@ -1038,6 +1057,18 @@ cfg_tree_check_inline_template(CfgTree *self, const gchar *template_or_name, GEr
   return template;
 }
 
+void
+__print_log_pipe_info(LogPipe *self)
+{
+  fprintf(stderr, "***  pipe: %p \n  expr_node: %p  pipe_next: %p  queue: %p  plugin_name: %s  \n",
+          self,
+          self->expr_node,
+          self->pipe_next,
+          self->queue,
+          self->plugin_name );
+  __log_expr_node_print_node_info(self->expr_node, "");
+}
+
 gboolean
 cfg_tree_compile(CfgTree *self)
 {
@@ -1050,7 +1081,7 @@ cfg_tree_compile(CfgTree *self)
   for (i = 0; i < self->rules->len; i++)
     {
       LogExprNode *rule = (LogExprNode *) g_ptr_array_index(self->rules, i);
-
+      __log_expr_node_print_node_info(rule, __func__);
       if ((rule->flags & LC_CATCHALL))
         {
           gpointer args[] = { self, rule };
@@ -1065,6 +1096,8 @@ cfg_tree_compile(CfgTree *self)
         }
     }
   self->compiled = TRUE;
+  fprintf(stderr, "\n******* Initialized pipes: *******\n");
+  g_ptr_array_foreach(self->initialized_pipes, (GFunc) __print_log_pipe_info, NULL);
   return TRUE;
 }
 
@@ -1107,6 +1140,7 @@ gboolean
 cfg_tree_start(CfgTree *self)
 {
   gint i;
+  fprintf(stderr, "*** %s\n", __FUNCTION__);
 
   if (!cfg_tree_compile(self))
     return FALSE;
@@ -1121,6 +1155,7 @@ cfg_tree_start(CfgTree *self)
     {
       LogPipe *pipe = g_ptr_array_index(self->initialized_pipes, i);
 
+      // fprintf(stderr, "*** %s calling init functions\n", __func__);
       if (!log_pipe_init(pipe))
         {
           msg_error("Error initializing message pipeline",
@@ -1151,6 +1186,7 @@ cfg_tree_stop(CfgTree *self)
 void
 cfg_tree_init_instance(CfgTree *self, GlobalConfig *cfg)
 {
+  fprintf(stderr, "*** %s\n", __FUNCTION__);
   memset(self, 0, sizeof(*self));
   self->initialized_pipes = g_ptr_array_new();
   self->objects = g_hash_table_new_full(cfg_tree_objects_hash, cfg_tree_objects_equal, NULL,

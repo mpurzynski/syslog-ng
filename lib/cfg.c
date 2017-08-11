@@ -191,6 +191,7 @@ gboolean
 cfg_init(GlobalConfig *cfg)
 {
   gint regerr;
+  fprintf(stderr, "*** %s\n", __FUNCTION__);
 
   if (cfg->file_template_name && !(cfg->file_template = cfg_tree_lookup_template(&cfg->tree, cfg->file_template_name)))
     msg_error("Error resolving file template",
@@ -347,6 +348,7 @@ cfg_new_snippet(gint version)
 GlobalConfig *
 cfg_new(gint version)
 {
+  fprintf(stderr, "*** %s\n", __FUNCTION__);
   GlobalConfig *self = cfg_new_snippet(version);
   cfg_load_candidate_modules(self);
   return self;
@@ -443,6 +445,7 @@ cfg_read_config(GlobalConfig *self, const gchar *fname, gboolean syntax_only, gc
 
   self->filename = fname;
 
+  fprintf(stderr, "*** %s filename: %s\n", __FUNCTION__, fname);
   if ((cfg_file = fopen(fname, "r")) != NULL)
     {
       CfgLexer *lexer;

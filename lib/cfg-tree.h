@@ -40,20 +40,20 @@ const gchar *log_expr_node_get_content_name(gint content);
 enum
 {
   /* expr node content type */
-  ENC_SOURCE,
-  ENC_DESTINATION,
-  ENC_FILTER,
-  ENC_PARSER,
-  ENC_REWRITE,
-  ENC_MAX,
+  ENC_SOURCE,           // 0
+  ENC_DESTINATION,      // 1
+  ENC_FILTER,           // 2
+  ENC_PARSER,           // 3
+  ENC_REWRITE,          // 4
+  ENC_MAX,              // 5
   /* */
-  ENC_PIPE,
+  ENC_PIPE,             // 6
 
   /* expr node layouts type */
-  ENL_SINGLE,
-  ENL_REFERENCE,
-  ENL_SEQUENCE,
-  ENL_JUNCTION,
+  ENL_SINGLE,           // 7
+  ENL_REFERENCE,        // 8
+  ENL_SEQUENCE,         // 9
+  ENL_JUNCTION,         // 10
 };
 
 

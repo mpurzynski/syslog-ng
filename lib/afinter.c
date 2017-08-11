@@ -333,6 +333,7 @@ afinter_source_new(AFInterSourceDriver *owner, LogSourceOptions *options)
 static gboolean
 afinter_sd_init(LogPipe *s)
 {
+  fprintf(stderr, "*** %s\n", __func__);
   AFInterSourceDriver *self = (AFInterSourceDriver *) s;
   GlobalConfig *cfg = log_pipe_get_config(s);
 
@@ -364,6 +365,7 @@ afinter_sd_init(LogPipe *s)
 static gboolean
 afinter_sd_deinit(LogPipe *s)
 {
+  fprintf(stderr, "*** %s\n", __func__);
   AFInterSourceDriver *self = (AFInterSourceDriver *) s;
 
   if (self->source)
@@ -383,6 +385,7 @@ afinter_sd_deinit(LogPipe *s)
 static void
 afinter_sd_free(LogPipe *s)
 {
+  fprintf(stderr, "*** %s\n", __func__);
   AFInterSourceDriver *self = (AFInterSourceDriver *) s;
 
   g_assert(!self->source);
@@ -393,6 +396,7 @@ afinter_sd_free(LogPipe *s)
 LogDriver *
 afinter_sd_new(GlobalConfig *cfg)
 {
+  fprintf(stderr, "*** %s\n", __func__);
   AFInterSourceDriver *self = g_new0(AFInterSourceDriver, 1);
 
   log_src_driver_init_instance((LogSrcDriver *)&self->super, cfg);

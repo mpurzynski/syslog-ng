@@ -472,6 +472,8 @@ main_loop_read_and_init_config(MainLoop *self)
 {
   MainLoopOptions *options = self->options;
 
+  fprintf(stderr, "*** %s\n", __FUNCTION__);
+
   self->current_configuration = cfg_new(0);
   if (!cfg_read_config(self->current_configuration, resolvedConfigurablePaths.cfgfilename, options->syntax_only,
                        options->preprocess_into))
