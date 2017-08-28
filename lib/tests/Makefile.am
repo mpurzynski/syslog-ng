@@ -109,7 +109,8 @@ if ENABLE_CRITERION
 lib_tests_TESTS		+= \
 	lib/tests/test_cache		\
 	lib/tests/test_scratch_buffers 	\
-	lib/tests/test_timeutils
+	lib/tests/test_timeutils	\
+	lib/tests/test_channel_junction
 
 lib_tests_test_cache_CFLAGS	=	\
 	$(TEST_CFLAGS)
@@ -124,6 +125,11 @@ lib_tests_test_timeutils_LDADD	=	\
 lib_tests_test_scratch_buffers_CFLAGS	=	\
 	$(TEST_CFLAGS)
 lib_tests_test_scratch_buffers_LDADD	=	\
+	$(TEST_LDADD)
+
+lib_tests_test_channel_junction_CFLAGS	=	\
+	$(TEST_CFLAGS)
+lib_tests_test_channel_junction_LDADD	=	\
 	$(TEST_LDADD)
 
 
