@@ -46,5 +46,6 @@ typedef struct _LogMultiplexer
 LogMultiplexer *log_multiplexer_new(GlobalConfig *cfg);
 void log_multiplexer_add_next_hop(LogMultiplexer *self, LogPipe *next_hop);
 
+void log_multiplexer_queue(LogPipe *s, LogMessage *msg, const LogPathOptions *path_options, gpointer user_data);
 
 #endif

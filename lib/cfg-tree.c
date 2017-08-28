@@ -1057,16 +1057,28 @@ cfg_tree_check_inline_template(CfgTree *self, const gchar *template_or_name, GEr
   return template;
 }
 
+gchar *
+__get_log_pipe_overriden_queue_name(LogPipe* self)
+{
+  // only returns names for overriden log_pipe_queue_functions
+    if (self->queue == log_multiplexer_queue)
+      return g_strdup("multiplexer");
+    else
+      return g_strdup_printf("%p", self->queue);
+}
+
 void
 __print_log_pipe_info(LogPipe *self)
 {
-  fprintf(stderr, "***  pipe: %p \n  expr_node: %p  pipe_next: %p  queue: %p  plugin_name: %s  \n",
+  gchar *queue_name = __get_log_pipe_overriden_queue_name(self);
+  fprintf(stderr, "***  pipe: %p \n  pipe_next: %9p  expr_node: %p  queue: %14s  plugin_name: %s  \n",
           self,
-          self->expr_node,
           self->pipe_next,
-          self->queue,
+          self->expr_node,
+          queue_name,
           self->plugin_name );
   __log_expr_node_print_node_info(self->expr_node, "");
+  g_free(queue_name);
 }
 
 gboolean
