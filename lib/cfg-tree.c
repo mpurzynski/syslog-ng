@@ -707,7 +707,8 @@ cfg_tree_compile_sequence(CfgTree *self, LogExprNode *node,
 
   first_pipe = last_pipe = NULL;
 
-  for (ep = node->children; ep; ep = ep->next)
+  guint number_of_childrens = 0;
+  for (ep = node->children; ep; ep = ep->next, number_of_childrens++)
     {
       LogPipe *sub_pipe_head = NULL, *sub_pipe_tail = NULL;
 
@@ -769,6 +770,7 @@ cfg_tree_compile_sequence(CfgTree *self, LogExprNode *node,
           log_pipe_append(sub_pipe_tail, source_join_pipe);
         }
     }
+  fprintf(stderr, "*** %s: number of (%p)childrens: %d \n", __func__, node, number_of_childrens);
 
 
 
@@ -839,7 +841,8 @@ cfg_tree_compile_junction(CfgTree *self,
   /* LC_XXX flags are currently only implemented for sequences, ensure that the grammar enforces this. */
   g_assert(node->flags == 0);
 
-  for (ep = node->children; ep; ep = ep->next)
+  guint number_of_childrens = 0;
+  for (ep = node->children; ep; ep = ep->next, number_of_childrens++)
     {
       LogPipe *sub_pipe_head = NULL, *sub_pipe_tail = NULL;
       gboolean is_first_branch = (ep == node->children);
@@ -853,7 +856,7 @@ cfg_tree_compile_junction(CfgTree *self,
 
           if (!is_first_branch && !fork_mpx)
             {
-              msg_error("Error compiling junction, source and non-source branches are mixed",
+              msg_error("Error1 compiling junction, source and non-source branches are mixed",
                         log_expr_node_location_tag(ep));
               goto error;
             }
@@ -869,7 +872,7 @@ cfg_tree_compile_junction(CfgTree *self,
 
           if (fork_mpx)
             {
-              msg_error("Error compiling junction, source and non-source branches are mixed",
+              msg_error("Error2 compiling junction, source and non-source branches are mixed",
                         log_expr_node_location_tag(ep));
               goto error;
             }
@@ -885,7 +888,7 @@ cfg_tree_compile_junction(CfgTree *self,
 
         }
     }
-
+  fprintf(stderr, "*** %s: number of (%p)childrens: %d \n", __func__, node, number_of_childrens);
   *outer_pipe_head = &fork_mpx->super;
   if (outer_pipe_tail)
     *outer_pipe_tail = join_pipe;
@@ -951,7 +954,9 @@ cfg_tree_compile_rule(CfgTree *self, LogExprNode *rule)
 {
   LogPipe *sub_pipe_head = NULL, *sub_pipe_tail = NULL;
 
-  return cfg_tree_compile_node(self, rule, &sub_pipe_head, &sub_pipe_tail);
+  gboolean result = cfg_tree_compile_node(self, rule, &sub_pipe_head, &sub_pipe_tail);
+  fprintf(stderr, "  %s: pipe_head: %p, pipe_tail: %p\n", __func__, sub_pipe_head, sub_pipe_tail);
+  return result;
 }
 
 static gboolean
@@ -1071,7 +1076,7 @@ void
 __print_log_pipe_info(LogPipe *self)
 {
   gchar *queue_name = __get_log_pipe_overriden_queue_name(self);
-  fprintf(stderr, "***  pipe: %p \n  pipe_next: %9p  expr_node: %p  queue: %14s  plugin_name: %s  \n",
+  fprintf(stderr, "***  pipe: %p \n  pipe_next: %9p  expr_node: %p  queue: %-14s  plugin_name: %s  \n",
           self,
           self->pipe_next,
           self->expr_node,
