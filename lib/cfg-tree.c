@@ -218,7 +218,7 @@ log_expr_node_set_aux(LogExprNode *self, gpointer aux, GDestroyNotify destroy)
 
 
 void
-__log_expr_node_print_node_info(LogExprNode *self, const char *caller_func)
+log_expr_node_print_node_info(LogExprNode *self, const char *caller_func)
 {
   gchar buf[128];
   fprintf(stderr, "%s  LogExprNode: %p,\n  name: %s  content: %s  layout: %s  location: %s",
@@ -262,7 +262,7 @@ log_expr_node_new(gint layout, gint content, const gchar *name, LogExprNode *chi
       self->line = yylloc->first_line;
       self->column = yylloc->first_column;
     }
-  //__log_expr_node_print_node_info(self, __func__);
+  //log_expr_node_print_node_info(self, __func__);
   return self;
 }
 
@@ -463,9 +463,6 @@ cfg_tree_add_all_sources(gpointer key, gpointer value, gpointer user_data)
                                                        referring_rule->children);
 }
 
-static gboolean
-cfg_tree_compile_node(CfgTree *self, LogExprNode *node,
-                      LogPipe **outer_pipe_head, LogPipe **outer_pipe_tail);
 
 static gboolean
 cfg_tree_compile_single(CfgTree *self, LogExprNode *node,
@@ -987,7 +984,7 @@ cfg_tree_add_object(CfgTree *self, LogExprNode *rule)
 {
   gboolean res = TRUE;
 
-  __log_expr_node_print_node_info(rule, __func__);
+  log_expr_node_print_node_info(rule, __func__);
 
   if (rule->name)
     {
@@ -1082,7 +1079,7 @@ __print_log_pipe_info(LogPipe *self)
           self->expr_node,
           queue_name,
           self->plugin_name );
-  __log_expr_node_print_node_info(self->expr_node, "");
+  log_expr_node_print_node_info(self->expr_node, "");
   g_free(queue_name);
 }
 
@@ -1098,7 +1095,7 @@ cfg_tree_compile(CfgTree *self)
   for (i = 0; i < self->rules->len; i++)
     {
       LogExprNode *rule = (LogExprNode *) g_ptr_array_index(self->rules, i);
-      __log_expr_node_print_node_info(rule, __func__);
+      log_expr_node_print_node_info(rule, __func__);
       if ((rule->flags & LC_CATCHALL))
         {
           gpointer args[] = { self, rule };

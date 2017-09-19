@@ -164,6 +164,8 @@ gboolean cfg_tree_add_object(CfgTree *self, LogExprNode *rule);
 LogExprNode *cfg_tree_get_object(CfgTree *self, gint type, const gchar *name);
 GList *cfg_tree_get_objects(CfgTree *self);
 
+void log_expr_node_set_children(LogExprNode *self, LogExprNode *children);
+
 gboolean cfg_tree_add_template(CfgTree *self, LogTemplate *template);
 LogTemplate *cfg_tree_lookup_template(CfgTree *self, const gchar *name);
 LogTemplate *cfg_tree_check_inline_template(CfgTree *self, const gchar *template_or_name, GError **error);
@@ -177,5 +179,7 @@ gboolean cfg_tree_stop(CfgTree *self);
 void cfg_tree_init_instance(CfgTree *self, GlobalConfig *cfg);
 void cfg_tree_free_instance(CfgTree *self);
 
+void log_expr_node_print_node_info(LogExprNode *self, const char *caller_func);
+gboolean cfg_tree_compile_node(CfgTree *self, LogExprNode *node, LogPipe **outer_pipe_head, LogPipe **outer_pipe_tail);
 
 #endif
