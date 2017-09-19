@@ -40,13 +40,13 @@ typedef struct
 {
   LogPipe super;
   LogPipeMsgStatus status;
-} LogPipeCheckpoint;
+} LogCheckpoint;
 
 typedef struct
 {
-  LogPipeCheckpoint *checkpoints;
+  LogCheckpoint *checkpoints;
   guint  len;
-} LogPipeCheckpoints;
+} LogCheckpoints;
 
 static void
 _init(void)
@@ -62,12 +62,12 @@ _deinit(void)
   cfg_free(configuration);
   app_shutdown();
 }
-
-LogPipeCheckpoints *
+/*
+LogCheckpoints *
 log_pipe_checkpoints_new(guint number_of_checkpoints)
 {
-  LogPipeCheckpoints *self = g_new0(LogPipeCheckpoints, 1);
-  self->checkpoints = g_new0(LogPipeCheckpoint, number_of_checkpoints);
+  LogCheckpoints *self = g_new0(LogCheckpoints, 1);
+  self->checkpoints = g_new0(LogCheckpoint, number_of_checkpoints);
 
   for (guint i = 0; i < self->len; i++)
     {
@@ -78,9 +78,40 @@ log_pipe_checkpoints_new(guint number_of_checkpoints)
   self->len = number_of_checkpoints;
   return self;
 }
+*/
+
+static LogPipe *log_checkpoint_new(GlobalConfig *cfg);
 
 static void
-config_definition_iterator(gpointer key, gpointer value, gpointer user_data)
+log_checkpoint_queue(LogPipe *s, LogMessage *msg, const LogPathOptions *path_options, gpointer user_data)
+{
+  LogCheckpoint *self = (LogCheckpoint *)s;
+  self->status = LP_PASSED;
+  fprintf(stderr, "*** %s: MESSAGE PASSED !!! in pipe %p\n", __func__, s);
+  log_pipe_forward_msg(s, msg, path_options);
+}
+
+static LogPipe *
+log_checkpoint_clone(LogPipe *self)
+{
+  return log_checkpoint_new(self->cfg);
+}
+
+static LogPipe *
+log_checkpoint_new(GlobalConfig *cfg)
+{
+  LogCheckpoint *self = g_new0(LogCheckpoint,1);
+  log_pipe_init_instance(&self->super, cfg);
+
+  self->super.clone = log_checkpoint_clone;
+  self->super.queue = log_checkpoint_queue;
+  self->status = LP_MISSED;
+
+  return &self->super;
+}
+
+static void
+config_add_pipe_node_as_children(gpointer key, gpointer value, gpointer user_data)
 {
   LogExprNode *rule = (LogExprNode *) value;
   log_expr_node_print_node_info(rule, "(1   ) "); /*FIXME*/
@@ -93,50 +124,54 @@ config_definition_iterator(gpointer key, gpointer value, gpointer user_data)
       log_expr_node_print_node_info(rule, NULL); /*FIXME*/
     }
 
-  LogExprNode *pipe_expr = log_expr_node_new_pipe(log_pipe_new(configuration), NULL);
+  LogExprNode *pipe_expr = log_expr_node_new_pipe(log_checkpoint_new(configuration), NULL);
   log_expr_node_set_children(rule, pipe_expr);
 }
 
 LogPipe *
-create_config_element(gchar *config_snippet)
+create_config_element(gchar *config_snippet, LogPipe **logpath_tail)
 {
-  //gboolean result = parse_config(raw_config, LL_CONTEXT_ROOT, NULL, NULL);
+  LogPipe *logpath_head = NULL;
+  CfgTree *cfg_tree = &configuration->tree;
+
   cr_assert(parse_config(config_snippet, LL_CONTEXT_ROOT, NULL, NULL));
 
   /* we have no drivers in configuration yet as configuration blocks are empty */
   /* add drivers: objects - GHashTable */
-  g_hash_table_foreach(configuration->tree.objects, config_definition_iterator, NULL);
+  g_hash_table_foreach(cfg_tree->objects, config_add_pipe_node_as_children, NULL);
 
-  /* TODO: add drivers: rules - GPtrArray */
+  /* todo: add drivers: rules - GPtrArray */
 
-  /* TODO: change cfg_tree_start/cfg_init to iterate through cfgtree->rules and compile each with compile_node
-   * and we will have the logpaths begin./end (except if source drivers used, then we will not have it) */
-  cr_assert(cfg_tree_start(&configuration->tree));
-  /* TODO: we need to copy the log_pipe_init mechanism */
-  /* TODO: LC_CATCHALL log path flag is inside cfg_tree start */
+  /* todo: change cfg_tree_start/cfg_init to iterate through cfgtree->rules and compile each with compile_node
+   * and we will have the logpaths begin./end (except if source drivers used, then we will not have the begin.) */
+  /* todo: have to save number of log paths = CfgTree->rules->len */
+  for (guint i = 0; i < cfg_tree->rules->len; i++)
+    {
+      LogExprNode *rule = (LogExprNode *) g_ptr_array_index(cfg_tree->rules, i);
+      cr_assert(cfg_tree_compile_node(cfg_tree, rule, &logpath_head, logpath_tail));
+    };
+  cfg_tree->compiled = TRUE;
+  cr_assert(cfg_tree_start(cfg_tree)); // need for log_pipe_init phase
 
-  return ((LogPipe *) g_ptr_array_index(configuration->tree.initialized_pipes, 0));
+  /* todo: we need to copy the log_pipe_init mechanism */
+  /* todo: LC_CATCHALL log path flag is inside cfg_tree start */
+
+  // return logpath_head;
+  return ((LogPipe *) g_ptr_array_index(cfg_tree->initialized_pipes, 0));
 }
 
-LogPipe *
-attach_checkpoint_pipes(LogPipe *logpath, guint number_of_checkpoints)
+void
+attach_checkpoint_pipes(LogPipe *logpath_head, LogPipe *logpath_tail)
 {
-  LogPipeCheckpoints *check_points = log_pipe_checkpoints_new(number_of_checkpoints);
-
-  // attach to beginning of tested logpath
-  log_pipe_append(check_points[0]->super, logpath);
+  // TODO: attach to beginning of tested logpath
 
   // attach to end of tested logpath
-  LogPipe *pipe = logpath;
-  while (pipe->next)
-    {
-        pipe = pipe->next;
-    }
-  log_pipe_append(pipe, check_points[1]->super);
+  LogCheckpoint *checkpoint_tail = (LogCheckpoint *) log_checkpoint_new(configuration);
+  cr_assert(log_pipe_init(&checkpoint_tail->super));
+  log_pipe_append(logpath_tail, &checkpoint_tail->super);
 
-  // attach to given point (junctions!)
+  // TODO: attach to given point (junctions!)
 
-  return logpath_beginning;
 }
 
 static void
@@ -150,16 +185,16 @@ send_logmsg_to_pipe_chain(LogPipe *tested_logpath)
 
   log_pipe_queue(tested_logpath, msg, &path_options);
 }
-
+/*
 static void
-assert_msg_arrived_to_checkpoints(LogPipeCheckpoints *self, ExpectedStatus *expected_status)
+assert_msg_arrived_to_checkpoints(LogCheckpoints *self, ExpectedStatus *expected_status)
 {
   // setup expected values per-channel.
   // If msg is expected to be dropped by channel #1 how to track the status?
 
   assert(self->checkpoints[i]->status == expected_status[i]);
 }
-
+*/
 TestSuite(channel_junction, .init = _init, .fini = _deinit);
 
 Test(channel_junction, test_proto)
@@ -181,11 +216,12 @@ Test(channel_junction, test_proto)
     "log { source (s_source); \n"
     "      parser (p_parser); \n"
     "};\n";
-
-  LogPipe *logpath = create_config_element(config);
-  logpath_beginning = attach_checkpoint_pipes(logpath, 2);
-  send_logmsg_to_pipe_chain(logpath);
-  assert_msg_arrived_to_checkpoints();
+  LogPipe *logpath_tail = NULL;
+  LogPipe *logpath_head = create_config_element(config, &logpath_tail);
+  fprintf(stderr, "*** created log path: head:%p tail:%p\n", logpath_head, logpath_tail);
+  attach_checkpoint_pipes(logpath_head, logpath_tail);
+  send_logmsg_to_pipe_chain(logpath_head);
+  // assert_msg_arrived_to_checkpoints();
 }
 
 // test log path flags
