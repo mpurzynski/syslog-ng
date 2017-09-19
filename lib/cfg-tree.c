@@ -911,18 +911,21 @@ cfg_tree_compile_node(CfgTree *self, LogExprNode *node,
   gboolean result = FALSE;
   static gint indent = -1;
 
-      gchar buf[128];
-      gchar compile_message[256];
+  gchar buf[128];
+  gchar compile_message[256];
 
-      indent++;
-      g_snprintf(compile_message, sizeof(compile_message),
-                 "%-*sCompiling %s %s [%s] at [%s]",
-                 indent * 2, "",
-                 node->name ? : "#unnamed",
-                 log_expr_node_get_layout_name(node->layout),
-                 log_expr_node_get_content_name(node->content),
-                 log_expr_node_format_location(node, buf, sizeof(buf)));
-      msg_send_formatted_message(EVT_PRI_DEBUG, compile_message);
+  indent++;
+  //g_snprintf(compile_message, sizeof(compile_message),
+  fprintf(stderr,
+          "%-*sCompiling %s %s [%s] at [%s] -- %p\n",
+          indent * 2, "",
+          node->name ? : "#unnamed",
+          log_expr_node_get_layout_name(node->layout),
+          log_expr_node_get_content_name(node->content),
+          log_expr_node_format_location(node, buf, sizeof(buf)),
+          node
+         );
+  //msg_send_formatted_message(EVT_PRI_DEBUG, compile_message);
 
   switch (node->layout)
     {
@@ -1060,13 +1063,13 @@ cfg_tree_check_inline_template(CfgTree *self, const gchar *template_or_name, GEr
 }
 
 gchar *
-__get_log_pipe_overriden_queue_name(LogPipe* self)
+__get_log_pipe_overriden_queue_name(LogPipe *self)
 {
   // only returns names for overriden log_pipe_queue_functions
-    if (self->queue == log_multiplexer_queue)
-      return g_strdup("multiplexer");
-    else
-      return g_strdup_printf("%p", self->queue);
+  if (self->queue == log_multiplexer_queue)
+    return g_strdup("multiplexer");
+  else
+    return g_strdup_printf("%p", self->queue);
 }
 
 void
