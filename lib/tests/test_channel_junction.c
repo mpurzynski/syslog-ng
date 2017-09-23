@@ -278,17 +278,18 @@ assert_msg_arrived_to_checkpoints(void)
 
 TestSuite(channel_junction, .init = _init, .fini = _deinit);
 
-Test(channel_junction, test_proto)
+Test(channel_junction, test_basic_config)
 {
   /* If we want to have config as input for test, then we have to face the problem
-   * that we cannot add a general driver to the config.
-   * Using existing modules would not be a good way.
+   * that we cannot add a general driver to the config
+   * (unless we create a dummy() driver, which can be source/destination/etc. object).
+   * Using existing drivers (e.g. file) would not be a good way.
    *
-    "source s_source { dummy(source); }; \n"
-    "log { source(s_source); \n"
-    "      parser  { dummy(parser);  }; \n"
-    "      rewrite { dummy(rewrite); }; \n"
-    "};\n";
+    "source s_source { dummy(); };
+    "log { source(s_source);
+    "      parser  { dummy();  };
+    "      rewrite { dummy(); };
+    "};
   */
 
   gchar *config =
@@ -298,14 +299,61 @@ Test(channel_junction, test_proto)
     "      parser (p_parser); \n"
     "};\n";
   LogPipe *logpath_tail = NULL;
-  LogPipe *logpath_head = create_config_element(config, &logpath_tail);
+  LogPipe *logpath_head = NULL;
+
+  cr_assert(create_logpath(config, &logpath_head, &logpath_tail));
   fprintf(stderr, "*** created log path: head:%p tail:%p\n", logpath_head, logpath_tail);
-  attach_checkpoint_pipes(logpath_head, logpath_tail);
-  send_logmsg_to_pipe_chain(logpath_head);
-  // assert_msg_arrived_to_checkpoints();
+  insert_checkpoint_to_beginning(logpath_head, LP_MSG_PASSED);
+  insert_checkpoint_to_end(logpath_tail, LP_MSG_PASSED);
+  send_logmsg_to_logpath(logpath_head);
+  assert_msg_arrived_to_checkpoints();
 }
 
+Test(channel_junction, test_channels_in_junction)
+{
+  gchar *config =
+  "log { \n"
+  "  junction { \n"
+  "    channel { }; \n"
+  "    channel { }; \n"
+  "  }; \n"
+  "}; \n";
+  LogPipe *logpath_tail = NULL;
+  LogPipe *logpath_head = NULL;
 
+  CfgTree *cfg_tree = parse_input_for_logpath(config);
+  insert_checkpoint_to_channel_end(cfg_tree, LP_MSG_PASSED);
+  insert_checkpoint_to_channel_end(cfg_tree, LP_MSG_PASSED);
+  insert_checkpoint_to_junction_end(cfg_tree, LP_MSG_PASSED);
+  cr_assert(compile_and_init_logpath(cfg_tree, &logpath_head, &logpath_tail));
+  insert_checkpoint_to_beginning(logpath_head, LP_MSG_PASSED);
+  insert_checkpoint_to_end(logpath_tail, LP_MSG_PASSED);
 
+  send_logmsg_to_logpath(logpath_head);
+  assert_msg_arrived_to_checkpoints();
+}
 
+Test(channel_junction, test_final_flag_in_channel)
+{
+  gchar *config =
+  "log { \n"
+  "  junction { \n"
+  "    channel { ,flags(final);}; \n"
+  "    channel { }; \n"
+  "  }; \n"
+  "}; \n";
+  LogPipe *logpath_tail = NULL;
+  LogPipe *logpath_head = NULL;
+
+  CfgTree *cfg_tree = parse_input_for_logpath(config);
+  insert_checkpoint_to_channel_end(cfg_tree, LP_MSG_PASSED);
+  insert_checkpoint_to_channel_end(cfg_tree, LP_MSG_MISSED);
+  insert_checkpoint_to_junction_end(cfg_tree, LP_MSG_PASSED);
+  cr_assert(compile_and_init_logpath(cfg_tree, &logpath_head, &logpath_tail));
+  insert_checkpoint_to_beginning(logpath_head, LP_MSG_PASSED);
+  insert_checkpoint_to_end(logpath_tail, LP_MSG_PASSED);
+
+  send_logmsg_to_logpath(logpath_head);
+  assert_msg_arrived_to_checkpoints();
+}
 
