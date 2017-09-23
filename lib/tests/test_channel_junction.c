@@ -42,11 +42,6 @@ typedef struct
   LogPipeMsgStatus status;
 } LogCheckpoint;
 
-typedef struct
-{
-  LogCheckpoint *checkpoints;
-  guint  len;
-} LogCheckpoints;
 
 static void
 _init(void)
@@ -62,23 +57,7 @@ _deinit(void)
   cfg_free(configuration);
   app_shutdown();
 }
-/*
-LogCheckpoints *
-log_pipe_checkpoints_new(guint number_of_checkpoints)
-{
-  LogCheckpoints *self = g_new0(LogCheckpoints, 1);
-  self->checkpoints = g_new0(LogCheckpoint, number_of_checkpoints);
 
-  for (guint i = 0; i < self->len; i++)
-    {
-      log_pipe_init_instance(self->checkpoints[i]->super, configuration);
-      // void (*queue)(LogPipe *self, LogMessage *msg, const LogPathOptions *path_options, gpointer user_data);
-      self->checkpoints[i]->super = checkpointpipe_queue;
-    }
-  self->len = number_of_checkpoints;
-  return self;
-}
-*/
 
 static LogPipe *log_checkpoint_new(GlobalConfig *cfg);
 
@@ -114,14 +93,14 @@ static void
 config_add_pipe_node_as_children(gpointer key, gpointer value, gpointer user_data)
 {
   LogExprNode *rule = (LogExprNode *) value;
-  log_expr_node_print_node_info(rule, "(1   ) "); /*FIXME*/
+  log_expr_node_print_node_info(rule, "parent_rule:"); /*FIXME*/
   cr_assert(rule->next == NULL);
 
   while (rule->children)
     {
       rule = rule->children;
       cr_assert(rule->next == NULL);
-      log_expr_node_print_node_info(rule, NULL); /*FIXME*/
+      log_expr_node_print_node_info(rule, "children_rule"); /*FIXME*/
     }
 
   LogExprNode *pipe_expr = log_expr_node_new_pipe(log_checkpoint_new(configuration), NULL);
@@ -224,11 +203,7 @@ Test(channel_junction, test_proto)
   // assert_msg_arrived_to_checkpoints();
 }
 
-// test log path flags
 
-// test grammar: where is it allowed to use junction/channel.
 
-// test message is intact in(after) channel #2 if LogMessage is modifed on channel #1.
 
-// test message duplication: channel #1 drops message, channel #2 accepts (is it a valid use-case ??)
 
