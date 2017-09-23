@@ -44,17 +44,20 @@ typedef struct
   LogPipeMsgStatus expected_status;
 } LogCheckpoint;
 
+GPtrArray *checkpoints;
 
 static void
 _init(void)
 {
   app_startup();
   configuration = cfg_new_snippet(VERSION_VALUE);
+  checkpoints = g_ptr_array_new();
 }
 
 static void
 _deinit(void)
 {
+  g_ptr_array_free(checkpoints, FALSE);
   cfg_deinit(configuration);
   cfg_free(configuration);
   app_shutdown();
@@ -92,6 +95,8 @@ log_checkpoint_pipe_new(GlobalConfig *cfg, LogPipeMsgStatus expected_status)
   self->super.queue = log_checkpoint_pipe_queue;
   self->status = LP_MSG_MISSED;
   self->expected_status = expected_status;
+
+  g_ptr_array_add(checkpoints, self);
 
   return &self->super;
 }
@@ -259,16 +264,18 @@ send_logmsg_to_logpath(LogPipe *tested_logpath)
 
   log_pipe_queue(tested_logpath, msg, &path_options);
 }
-/*
-static void
-assert_msg_arrived_to_checkpoints(LogCheckpoints *self, ExpectedStatus *expected_status)
-{
-  // setup expected values per-channel.
-  // If msg is expected to be dropped by channel #1 how to track the status?
 
-  assert(self->checkpoints[i]->status == expected_status[i]);
+static void
+assert_msg_arrived_to_checkpoints(void)
+{
+  // If msg is expected to be dropped by channel #1 how to track the status?
+  for(guint i=0; i < checkpoints->len; i++)
+    {
+      LogCheckpoint *checkpoint_pipe  = g_ptr_array_index(checkpoints, i);
+      cr_assert(checkpoint_pipe->status == checkpoint_pipe->expected_status);
+    }
 }
-*/
+
 TestSuite(channel_junction, .init = _init, .fini = _deinit);
 
 Test(channel_junction, test_proto)
