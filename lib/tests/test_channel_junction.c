@@ -120,36 +120,54 @@ config_add_pipe_node_as_children(gpointer key, gpointer value, gpointer user_dat
   log_expr_node_set_children(rule, checkpoint_node);
 }
 
-LogPipe *
-create_config_element(gchar *config_snippet, LogPipe **logpath_tail)
+static void
+add_drivers_to_empty_cfg_blocks(CfgTree *cfg_tree)
 {
-  LogPipe *logpath_head = NULL;
-  CfgTree *cfg_tree = &configuration->tree;
-
-  cr_assert(parse_config(config_snippet, LL_CONTEXT_ROOT, NULL, NULL));
-
   /* we have no drivers in configuration yet as configuration blocks are empty */
-  /* add drivers: objects - GHashTable */
+  /* add drivers to named cfg objects: CfgTree.objects - GHashTable */
   g_hash_table_foreach(cfg_tree->objects, config_add_pipe_node_as_children, NULL);
 
-  /* todo: add drivers: rules - GPtrArray */
+  /* todo: add drivers to inline cfg objects: CfgTree.rules - GPtrArray */
+}
 
+static void
+compile_logexprnodes_into_logpath(CfgTree *cfg_tree, LogPipe **logpath_head, LogPipe **logpath_tail)
+{
   /* todo: change cfg_tree_start/cfg_init to iterate through cfgtree->rules and compile each with compile_node
    * and we will have the logpaths begin./end (except if source drivers used, then we will not have the begin.) */
   /* todo: have to save number of log paths = CfgTree->rules->len */
   for (guint i = 0; i < cfg_tree->rules->len; i++)
     {
       LogExprNode *rule = (LogExprNode *) g_ptr_array_index(cfg_tree->rules, i);
-      cr_assert(cfg_tree_compile_node(cfg_tree, rule, &logpath_head, logpath_tail));
-    };
+      cr_assert(cfg_tree_compile_node(cfg_tree, rule, logpath_head, logpath_tail));
+    }
+
+  /* todo logpath flags: LC_CATCHALL log path flag is inside cfg_tree start */
+
   cfg_tree->compiled = TRUE;
+}
+
   cr_assert(cfg_tree_start(cfg_tree)); // need for log_pipe_init phase
 
-  /* todo: we need to copy the log_pipe_init mechanism */
-  /* todo: LC_CATCHALL log path flag is inside cfg_tree start */
+static CfgTree *
+parse_input_for_logpath(gchar *config_snippet)
+{
+  cr_assert(parse_config(config_snippet, LL_CONTEXT_ROOT, NULL, NULL));
+  return &configuration->tree;
+}
 
-  // return logpath_head;
-  return ((LogPipe *) g_ptr_array_index(cfg_tree->initialized_pipes, 0));
+static gboolean
+compile_and_init_logpath(CfgTree *cfg_tree, LogPipe **logpath_head, LogPipe **logpath_tail)
+{
+  add_drivers_to_empty_cfg_blocks(cfg_tree);
+  compile_logexprnodes_into_logpath(cfg_tree, logpath_head, logpath_tail);
+  initialize_compiled_logpipes(cfg_tree);
+
+  // cfg_tree_compile overrides logpath_head with NULL if there is a source statement in cfg
+  if(*logpath_head == NULL)
+    *logpath_head = ((LogPipe *) g_ptr_array_index(cfg_tree->initialized_pipes, 0));
+
+  return TRUE;
 }
 
 void
@@ -162,7 +180,13 @@ attach_checkpoint_pipes(LogPipe *logpath_head, LogPipe *logpath_tail)
   cr_assert(log_pipe_init(&checkpoint_tail->super));
   log_pipe_append(logpath_tail, &checkpoint_tail->super);
 
-  // TODO: attach to given point (junctions!)
+static gboolean
+create_logpath(gchar *config_snippet, LogPipe **logpath_head, LogPipe **logpath_tail)
+{
+  CfgTree *cfg_tree = parse_input_for_logpath(config_snippet);
+  cr_assert(compile_and_init_logpath(cfg_tree, logpath_head, logpath_tail));
+  return TRUE;
+}
 
 }
 
