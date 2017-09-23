@@ -32,14 +32,16 @@
 
 typedef enum
 {
-  LP_MISSED,
-  LP_PASSED,
+  LP_MSG_MISSED,
+  LP_MSG_PASSED,
+  LP_MSG_DROP
 } LogPipeMsgStatus;
 
 typedef struct
 {
   LogPipe super;
   LogPipeMsgStatus status;
+  LogPipeMsgStatus expected_status;
 } LogCheckpoint;
 
 
@@ -58,35 +60,46 @@ _deinit(void)
   app_shutdown();
 }
 
-
-static LogPipe *log_checkpoint_new(GlobalConfig *cfg);
+static LogPipe *log_checkpoint_pipe_new(GlobalConfig *cfg, LogPipeMsgStatus expected_status);
 
 static void
-log_checkpoint_queue(LogPipe *s, LogMessage *msg, const LogPathOptions *path_options, gpointer user_data)
+log_checkpoint_pipe_queue(LogPipe *s, LogMessage *msg, const LogPathOptions *path_options, gpointer user_data)
 {
   LogCheckpoint *self = (LogCheckpoint *)s;
-  self->status = LP_PASSED;
+  self->status = LP_MSG_PASSED;
   fprintf(stderr, "*** %s: MESSAGE PASSED !!! in pipe %p\n", __func__, s);
   log_pipe_forward_msg(s, msg, path_options);
 }
 
+/* cloning needed the first time when cfg is compiled twice (for LogPipe init functionality) */
 static LogPipe *
-log_checkpoint_clone(LogPipe *self)
+log_checkpoint_pipe_clone(LogPipe *s)
 {
-  return log_checkpoint_new(self->cfg);
+  LogCheckpoint *self = (LogCheckpoint *) s;
+  LogCheckpoint *clone = (LogCheckpoint *)log_checkpoint_pipe_new(self->super.cfg, 0);
+  clone->status = self->status;
+  clone->expected_status = self->expected_status;
+  return &clone->super;
 }
 
 static LogPipe *
-log_checkpoint_new(GlobalConfig *cfg)
+log_checkpoint_pipe_new(GlobalConfig *cfg, LogPipeMsgStatus expected_status)
 {
-  LogCheckpoint *self = g_new0(LogCheckpoint,1);
+  LogCheckpoint *self = g_new0(LogCheckpoint, 1);
   log_pipe_init_instance(&self->super, cfg);
 
-  self->super.clone = log_checkpoint_clone;
-  self->super.queue = log_checkpoint_queue;
-  self->status = LP_MISSED;
+  self->super.clone = log_checkpoint_pipe_clone;
+  self->super.queue = log_checkpoint_pipe_queue;
+  self->status = LP_MSG_MISSED;
+  self->expected_status = expected_status;
 
   return &self->super;
+}
+
+static LogExprNode *
+log_checkpoint_node_new(GlobalConfig *cfg, LogPipeMsgStatus expected_status)
+{
+  return log_expr_node_new_pipe(log_checkpoint_pipe_new(configuration, expected_status), NULL);
 }
 
 static void
@@ -103,8 +116,8 @@ config_add_pipe_node_as_children(gpointer key, gpointer value, gpointer user_dat
       log_expr_node_print_node_info(rule, "children_rule"); /*FIXME*/
     }
 
-  LogExprNode *pipe_expr = log_expr_node_new_pipe(log_checkpoint_new(configuration), NULL);
-  log_expr_node_set_children(rule, pipe_expr);
+  LogExprNode *checkpoint_node = log_checkpoint_node_new(configuration, LP_MSG_PASSED);
+  log_expr_node_set_children(rule, checkpoint_node);
 }
 
 LogPipe *
