@@ -147,7 +147,12 @@ compile_logexprnodes_into_logpath(CfgTree *cfg_tree, LogPipe **logpath_head, Log
   cfg_tree->compiled = TRUE;
 }
 
+static void
+initialize_compiled_logpipes(CfgTree *cfg_tree)
+{
   cr_assert(cfg_tree_start(cfg_tree)); // need for log_pipe_init phase
+  /* todo: need to copy the log_pipe_init mechanism */
+}
 
 static CfgTree *
 parse_input_for_logpath(gchar *config_snippet)
@@ -170,15 +175,17 @@ compile_and_init_logpath(CfgTree *cfg_tree, LogPipe **logpath_head, LogPipe **lo
   return TRUE;
 }
 
-void
-attach_checkpoint_pipes(LogPipe *logpath_head, LogPipe *logpath_tail)
+static void
+_check_logpath_is_not_compiled(CfgTree *cfg_tree, gchar *func_name, gchar *checkpoint_target)
 {
-  // TODO: attach to beginning of tested logpath
+  cr_assert_not(cfg_tree->compiled, "%s: inserting %s checkpoints into logpath should be done before compile of logpath", func_name, checkpoint_target);
+}
 
-  // attach to end of tested logpath
-  LogCheckpoint *checkpoint_tail = (LogCheckpoint *) log_checkpoint_new(configuration);
-  cr_assert(log_pipe_init(&checkpoint_tail->super));
-  log_pipe_append(logpath_tail, &checkpoint_tail->super);
+static LogExprNode *
+find_logexpr_node(LogExprNode *rule, guint node_layout, guint node_content)
+{
+  ;
+}
 
 static gboolean
 create_logpath(gchar *config_snippet, LogPipe **logpath_head, LogPipe **logpath_tail)
@@ -188,14 +195,65 @@ create_logpath(gchar *config_snippet, LogPipe **logpath_head, LogPipe **logpath_
   return TRUE;
 }
 
+static void
+insert_checkpoint_to_beginning(LogPipe *logpath_head, LogPipeMsgStatus expected_status)
+{
+  LogCheckpoint *checkpoint = (LogCheckpoint *) log_checkpoint_pipe_new(configuration, expected_status);
+  cr_assert(log_pipe_init(&checkpoint->super));
+  log_pipe_append(&checkpoint->super, logpath_head);
 }
 
 static void
-send_logmsg_to_pipe_chain(LogPipe *tested_logpath)
+insert_checkpoint_to_end(LogPipe *logpath_tail, LogPipeMsgStatus expected_status)
 {
-  gchar *msg_content = "a brave beacon message";
-  LogPathOptions path_options = {FALSE, FALSE, NULL };
+  LogCheckpoint *checkpoint = (LogCheckpoint *) log_checkpoint_pipe_new(configuration, expected_status);
+  cr_assert(log_pipe_init(&checkpoint->super));
+  log_pipe_append(logpath_tail, &checkpoint->super);
+}
 
+static void
+insert_checkpoint_to_channel_end(CfgTree *cfg_tree, LogPipeMsgStatus expected_status)
+{
+  _check_logpath_is_not_compiled(cfg_tree, (gchar *)__func__, "channel");
+
+  for (guint i = 0; i < cfg_tree->rules->len; i++)
+    {
+      LogExprNode *rule = (LogExprNode *) g_ptr_array_index(cfg_tree->rules, i);
+      LogExprNode *logexpr = find_logexpr_node(rule, ENL_SEQUENCE, ENC_PIPE);
+      if(logexpr)
+        {
+          LogExprNode *checkpoint_node = log_checkpoint_node_new(configuration, expected_status);
+          log_expr_node_append(checkpoint_node, logexpr->next);
+          log_expr_node_append(logexpr, checkpoint_node);
+          return;
+        }
+    }
+}
+
+static void
+insert_checkpoint_to_junction_end(CfgTree *cfg_tree, LogPipeMsgStatus expected_status)
+{
+  _check_logpath_is_not_compiled(cfg_tree, (gchar *)__func__, "junction");
+
+  for (guint i = 0; i < cfg_tree->rules->len; i++)
+    {
+      LogExprNode *rule = (LogExprNode *) g_ptr_array_index(cfg_tree->rules, i);
+      LogExprNode *logexpr = find_logexpr_node(rule, ENL_JUNCTION, ENC_PIPE);
+      if(logexpr)
+        {
+          LogExprNode *checkpoint_node = log_checkpoint_node_new(configuration, expected_status);
+          log_expr_node_append(checkpoint_node, logexpr->next);
+          log_expr_node_append(logexpr, checkpoint_node);
+          return;
+        }
+    }
+}
+
+static void
+send_logmsg_to_logpath(LogPipe *tested_logpath)
+{
+  gchar *msg_content = "a beacon message";
+  LogPathOptions path_options = {FALSE, FALSE, NULL };
   LogMessage *msg = log_msg_new_empty();
   log_msg_set_value_by_name(msg, "MESSAGE", msg_content, -1);
 
