@@ -22,18 +22,63 @@
 
 #include "generator.h"
 #include "messages.h"
+#include "logsource.h"
 #include <string.h>
+
+typedef struct
+{
+  LogSource super;
+} GeneratorSource;
 
 typedef struct 
 {
   LogSrcDriver super;
+  GeneratorSource *generator;
 } GeneratorSrcDriver;
+
+static gboolean
+generator_source_init(LogPipe *s)
+{
+  if(!log_source_init(s))
+    return FALSE;
+
+  return TRUE;
+}
+
+static gboolean
+generator_source_deinit(LogPipe *s)
+{
+  return log_source_deinit(s);
+}
+
+static GeneratorSource *
+generator_source_new(GeneratorSrcDriver *owner)
+{
+  GeneratorSource *self = g_new0(GeneratorSource, 1);
+  GlobalConfig *cfg = log_pipe_get_config(&owner->super.super.super);
+
+  log_source_init_instance(&self->super, cfg);
+  self->super.super.init = generator_source_init;
+  self->super.super.deinit = generator_source_deinit;
+  return self;
+}
 
 static gboolean
 generator_sd_init(LogPipe *s)
 {
+  GeneratorSrcDriver *self = (GeneratorSrcDriver *) s;
+
   if (!log_src_driver_init_method(s))
     return FALSE;
+
+  self->generator = generator_source_new(self);
+  log_pipe_append(&self->generator->super.super, s);
+  if (!log_pipe_init(&self->generator->super.super))
+    {
+      log_pipe_unref(&self->generator->super.super);
+      self->generator = NULL;
+      return FALSE;
+    }
 
   return TRUE;
 }
@@ -41,8 +86,16 @@ generator_sd_init(LogPipe *s)
 static gboolean
 generator_sd_deinit(LogPipe *s)
 {
+  GeneratorSrcDriver *self = (GeneratorSrcDriver *) s;
   if (!log_src_driver_deinit_method(s))
     return FALSE;
+
+  if(self->generator)
+    {
+      log_pipe_deinit(&self->generator->super.super);
+      log_pipe_unref(&self->generator->super.super);
+      self->generator = NULL;
+    }
 
   return TRUE;
 }

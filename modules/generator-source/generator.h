@@ -23,8 +23,6 @@
 #define SDGENERATOR_H_INCLUDED
 
 #include "driver.h"
-#include "logsource.h"
-
 
 LogDriver *generator_sd_new(GlobalConfig *cfg);
 
