@@ -4,6 +4,7 @@ include modules/afsql/Makefile.am
 include modules/afstreams/Makefile.am
 include modules/affile/Makefile.am
 include modules/afprog/Makefile.am
+include modules/generator-source/Makefile.am
 include modules/afuser/Makefile.am
 include modules/afamqp/Makefile.am
 include modules/afmongodb/Makefile.am
@@ -53,7 +54,7 @@ SYSLOG_NG_MODULES	=	\
 	mod-redis mod-pseudofile mod-graphite mod-riemann \
 	mod-python mod-java mod-java-modules mod-kvformat mod-date \
 	mod-native mod-cef mod-add-contextual-data mod-diskq mod-getent \
-	mod-map-value-pairs mod-snmptrapd-parser mod-tags-parser
+	mod-map-value-pairs mod-snmptrapd-parser mod-tags-parser mod-generator-source
 
 
 modules modules/: ${SYSLOG_NG_MODULES}

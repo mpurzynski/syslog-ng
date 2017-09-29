@@ -1,6 +1,8 @@
 module_LTLIBRARIES      += modules/generator-source/libgenerator-source.la
 modules_generator_source_libgenerator_source_la_SOURCES = \
   modules/generator-source/generator-source-grammar.y       \
+  modules/generator-source/generator.c                      \
+  modules/generator-source/generator.h                      \
   modules/generator-source/generator-source-parser.c        \
   modules/generator-source/generator-source-parser.h        \
   modules/generator-source/generator-source-plugin.c

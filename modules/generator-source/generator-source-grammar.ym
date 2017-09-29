@@ -30,6 +30,7 @@
 
 #include "cfg-parser.h"
 #include "generator-source-grammar.h"
+#include "generator.h"
 #include "syslog-names.h"
 #include "messages.h"
 #include "plugin.h"
@@ -51,14 +52,22 @@
 
 /* INCLUDE_DECLS */
 
+%token KW_GENERATOR
+
+%type <ptr> generator_stmt
+
 %%
 
 start
-  : LL_CONTEXT_SOURCE first_rule          { YYACCEPT; }
+  : LL_CONTEXT_SOURCE generator_stmt { YYACCEPT; }
   ;
 
-first_rule
-  :
+generator_stmt
+  : KW_GENERATOR '('
+    {
+     *instance = last_driver = generator_sd_new(configuration);
+    }
+    ')'       { $$ = last_driver; }
   ;
 
 /* INCLUDE_RULES */
