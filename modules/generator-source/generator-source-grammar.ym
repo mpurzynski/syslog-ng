@@ -53,6 +53,7 @@
 /* INCLUDE_DECLS */
 
 %token KW_GENERATOR
+%token KW_GEN_FREQ
 
 %type <ptr> generator_stmt
 
@@ -66,8 +67,20 @@ generator_stmt
   : KW_GENERATOR '('
     {
      *instance = last_driver = generator_sd_new(configuration);
+     last_source_options = get_generator_options(last_driver);
     }
+    generator_options
     ')'       { $$ = last_driver; }
+  ;
+
+generator_options
+  : generator_option generator_options
+  |
+  ;
+
+generator_option
+  : source_option
+  | KW_GEN_FREQ '(' nonnegative_integer ')' { generator_source_options_set_freq(last_source_options, $3); }
   ;
 
 /* INCLUDE_RULES */

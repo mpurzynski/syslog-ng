@@ -23,7 +23,11 @@
 #define SDGENERATOR_H_INCLUDED
 
 #include "driver.h"
+#include "logsource.h"
 
 LogDriver *generator_sd_new(GlobalConfig *cfg);
+LogSourceOptions *get_generator_options(LogDriver *s);
+void generator_source_options_set_freq(LogSourceOptions *o, guint freq_value);
+
 
 #endif

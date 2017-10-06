@@ -28,16 +28,57 @@
 
 typedef struct
 {
+  LogSourceOptions super;
+  guint generating_periodicity;
+} GeneratorSourceOptions;
+
+typedef struct
+{
   LogSource super;
   struct iv_timer generator_timer;
+  GeneratorSourceOptions *options;
 } GeneratorSource;
 
 typedef struct 
 {
   LogSrcDriver super;
-  GeneratorSource *generator;
-  LogSourceOptions gsource_options;
+  LogSource *generator;
+  GeneratorSourceOptions gsource_options;
 } GeneratorSrcDriver;
+
+void
+generator_source_options_set_freq(LogSourceOptions *o, guint freq_value)
+{
+   GeneratorSourceOptions* self  = (GeneratorSourceOptions *)o;
+   self->generating_periodicity = freq_value;
+}
+
+LogSourceOptions *
+get_generator_options(LogDriver *s)
+{
+  GeneratorSrcDriver *self = (GeneratorSrcDriver *)s;
+  return &self->gsource_options.super;
+}
+
+void
+generator_source_options_defaults(GeneratorSourceOptions *self)
+{
+  log_source_options_defaults(&self->super);
+  self->generating_periodicity = 2;
+}
+
+void
+generator_source_options_init(GeneratorSourceOptions *self, GlobalConfig *cfg, const gchar *group_name)
+{
+  log_source_options_init(&self->super, cfg, group_name);
+}
+
+void
+generator_source_options_destroy(GeneratorSourceOptions *self)
+{
+  // free dynamic atrributes in GeneratorSourceOptions: no dynamic attr.
+  log_source_options_destroy(&self->super);
+}
 
 static void
 generator_timer_update_and_trigger(GeneratorSource *self)
@@ -50,7 +91,7 @@ generator_timer_update_and_trigger(GeneratorSource *self)
 
   iv_validate_now();
   self->generator_timer.expires = iv_now;
-  self->generator_timer.expires.tv_sec += 3;
+  self->generator_timer.expires.tv_sec += self->options->generating_periodicity;
   iv_timer_register(&self->generator_timer);
 }
 
@@ -61,7 +102,7 @@ generator_timer_handler(void *cookie)
   LogMessage *msg = log_msg_new_empty();
   log_msg_set_value(msg, LM_V_MESSAGE, "YIPPIKAYE", -1);
   log_source_post(&self->super, msg);
-  
+
   generator_timer_update_and_trigger(self);
 }
 
@@ -73,11 +114,24 @@ generator_timer_init(GeneratorSource *self)
   self->generator_timer.handler = generator_timer_handler;
 }
 
-static gboolean
+void
+generator_source_set_options(LogSource *s, GeneratorSourceOptions *options,
+                             const gchar *stats_id, const gchar *stats_instance,
+                             gboolean threaded, gboolean pos_tracked, LogExprNode *expr_node)
+{
+  GeneratorSource *self = (GeneratorSource *)s;
+
+  self->options = options;
+  log_source_set_options(&self->super, &options->super,
+                         stats_id, stats_instance,
+                         threaded, pos_tracked, expr_node);
+}
+
+gboolean
 generator_source_init(LogPipe *s)
 {
   GeneratorSource *self = (GeneratorSource*) s;
- 
+
   if(!log_source_init(s))
     return FALSE;
 
@@ -85,27 +139,23 @@ generator_source_init(LogPipe *s)
   return TRUE;
 }
 
-static gboolean
+gboolean
 generator_source_deinit(LogPipe *s)
 {
   return log_source_deinit(s);
 }
 
-static GeneratorSource *
-generator_source_new(GeneratorSrcDriver *owner)
+LogSource *
+generator_source_new(GlobalConfig *cfg)
 {
   GeneratorSource *self = g_new0(GeneratorSource, 1);
-  GlobalConfig *cfg = log_pipe_get_config(&owner->super.super.super);
 
   log_source_init_instance(&self->super, cfg);
-  log_source_set_options(&self->super, &owner->gsource_options,
-                        owner->super.super.id, "generator_source",
-                        FALSE, FALSE, owner->super.super.super.expr_node);
   self->super.super.init = generator_source_init;
   self->super.super.deinit = generator_source_deinit;
 
   generator_timer_init(self);
-  return self;
+  return &self->super;
 }
 
 static gboolean
@@ -117,12 +167,16 @@ generator_sd_init(LogPipe *s)
   if (!log_src_driver_init_method(s))
     return FALSE;
 
-  log_source_options_init(&self->gsource_options, cfg, self->super.super.group);
-  self->generator = generator_source_new(self);
-  log_pipe_append(&self->generator->super.super, s);
-  if (!log_pipe_init(&self->generator->super.super))
+  generator_source_options_init(&self->gsource_options, cfg, self->super.super.group);
+  self->generator = generator_source_new(cfg);
+  generator_source_set_options(self->generator, &self->gsource_options,
+                        self->super.super.id, "generator",
+                        FALSE, FALSE, self->super.super.super.expr_node);
+
+  log_pipe_append(&self->generator->super, s);
+  if (!log_pipe_init(&self->generator->super))
     {
-      log_pipe_unref(&self->generator->super.super);
+      log_pipe_unref(&self->generator->super);
       self->generator = NULL;
       return FALSE;
     }
@@ -139,8 +193,8 @@ generator_sd_deinit(LogPipe *s)
 
   if(self->generator)
     {
-      log_pipe_deinit(&self->generator->super.super);
-      log_pipe_unref(&self->generator->super.super);
+      log_pipe_deinit(&self->generator->super);
+      log_pipe_unref(&self->generator->super);
       self->generator = NULL;
     }
 
@@ -152,7 +206,7 @@ generator_sd_free(LogPipe *s)
 {
   GeneratorSrcDriver *self = (GeneratorSrcDriver *) s;
 
-  log_source_options_destroy(&self->gsource_options);
+  generator_source_options_destroy(&self->gsource_options);
   log_src_driver_free(s);
 }
 
@@ -162,7 +216,7 @@ generator_sd_new(GlobalConfig *cfg)
   GeneratorSrcDriver *self = g_new0(GeneratorSrcDriver, 1);
 
   log_src_driver_init_instance((LogSrcDriver *)&self->super, cfg);
-  log_source_options_defaults(&self->gsource_options);
+  generator_source_options_defaults(&self->gsource_options);
   self->super.super.super.init = generator_sd_init;
   self->super.super.super.deinit = generator_sd_deinit;
   self->super.super.super.free_fn = generator_sd_free;
