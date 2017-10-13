@@ -39,7 +39,7 @@ typedef struct
   GeneratorSourceOptions *options;
 } GeneratorSource;
 
-typedef struct 
+typedef struct
 {
   LogSrcDriver super;
   LogSource *generator;
@@ -49,8 +49,8 @@ typedef struct
 void
 generator_source_options_set_freq(LogSourceOptions *o, guint freq_value)
 {
-   GeneratorSourceOptions* self  = (GeneratorSourceOptions *)o;
-   self->generating_periodicity = freq_value;
+  GeneratorSourceOptions *self  = (GeneratorSourceOptions *)o;
+  self->generating_periodicity = freq_value;
 }
 
 LogSourceOptions *
@@ -130,7 +130,7 @@ generator_source_set_options(LogSource *s, GeneratorSourceOptions *options,
 gboolean
 generator_source_init(LogPipe *s)
 {
-  GeneratorSource *self = (GeneratorSource*) s;
+  GeneratorSource *self = (GeneratorSource *) s;
 
   if(!log_source_init(s))
     return FALSE;
@@ -170,8 +170,8 @@ generator_sd_init(LogPipe *s)
   generator_source_options_init(&self->gsource_options, cfg, self->super.super.group);
   self->generator = generator_source_new(cfg);
   generator_source_set_options(self->generator, &self->gsource_options,
-                        self->super.super.id, "generator",
-                        FALSE, FALSE, self->super.super.super.expr_node);
+                               self->super.super.id, "generator",
+                               FALSE, FALSE, self->super.super.super.expr_node);
 
   log_pipe_append(&self->generator->super, s);
   if (!log_pipe_init(&self->generator->super))
