@@ -23,6 +23,7 @@
 #include "generator.h"
 #include "messages.h"
 #include "logsource.h"
+#include "template/templates.h"
 #include <string.h>
 #include <iv.h>
 
@@ -37,6 +38,7 @@ typedef struct
   LogSource super;
   struct iv_timer generator_timer;
   GeneratorSourceOptions *options;
+  LogTemplate *template;
 } GeneratorSource;
 
 typedef struct
@@ -100,9 +102,14 @@ generator_timer_handler(void *cookie)
 {
   GeneratorSource *self = (GeneratorSource *) cookie;
   LogMessage *msg = log_msg_new_empty();
-  log_msg_set_value(msg, LM_V_MESSAGE, "YIPPIKAYE", -1);
-  log_source_post(&self->super, msg);
+  GString *template_result = g_string_new("");
+  log_msg_set_value(msg, LM_V_HOST, "template-host", -1);
 
+  log_template_format(self->template, msg, NULL, LTZ_LOCAL, 1, NULL, template_result);
+  log_msg_set_value(msg, LM_V_MESSAGE, template_result->str, -1);
+  g_string_free(template_result, TRUE);
+
+  log_source_post(&self->super, msg);
   generator_timer_update_and_trigger(self);
 }
 
@@ -113,6 +120,20 @@ generator_timer_init(GeneratorSource *self)
   self->generator_timer.cookie = self;
   self->generator_timer.handler = generator_timer_handler;
 }
+
+static void
+generator_source_init_template(LogSource *s)
+{
+  GeneratorSource *self = (GeneratorSource *)s;
+  GlobalConfig *cfg = log_pipe_get_config(&self->super.super);
+  GError *error = NULL;
+
+  self->template = log_template_new(cfg, "generator");
+  gboolean success = log_template_compile(self->template, "this is the message host=$HOST pid=${PID}\n", &error);
+  if(success)
+    fprintf(stderr, "*** %s: compiled the template! \n", __func__);
+}
+
 
 void
 generator_source_set_options(LogSource *s, GeneratorSourceOptions *options,
@@ -135,6 +156,7 @@ generator_source_init(LogPipe *s)
   if(!log_source_init(s))
     return FALSE;
 
+  generator_source_init_template(&self->super);
   generator_timer_update_and_trigger(self);
   return TRUE;
 }
