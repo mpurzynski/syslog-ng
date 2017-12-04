@@ -1,3 +1,22 @@
+class SourceSender(object):
+    def __init__(self, connection_options, driver_name, writer_class):
+        self.connection_options = connection_options
+        self.driver_name = driver_name
+        self.writer_class = writer_class
+
+    def send(self, message):
+        return self.writer_class.write_content(self.connection_options, content=message, driver_name=self.driver_name)
+
+class DestinationReceiver(object):
+    def __init__(self, connection_options, driver_name, listener_class):
+        self.connection_options = connection_options
+        self.driver_name = driver_name
+        self.listener_class = listener_class
+
+    def receive(self):
+        return self.listener_class.wait_for_content(self.connection_options, driver_name=self.driver_name)
+
+
 class SyslogNgConfigElementCreator(object):
     def __init__(self, testdb_logger, syslog_ng_config, config_connector, config_common, driver_data_provider):
         self.log_writer = testdb_logger.set_logger("SyslogNgConfigElementCreator")
@@ -43,7 +62,7 @@ class SyslogNgConfigElementCreator(object):
 
         statement = self.config_connector.connect_driver_with_statement(driver_properties=driver_properties, statement=empty_statement)
         self.config_connector.connect_statement_to_root_config(statement=statement, statement_name=statement_name)
-        return statement_id, driver_id
+        return statement_id, driver_properties[driver_id]
 
     # drivers
     def create_driver_properties(self, statement_id, driver_name, driver_options, use_mandatory_options):
@@ -65,7 +84,9 @@ class SyslogNgConfigElementCreator(object):
                 "config_mandatory_options": mandatory_options,
                 "connection_mandatory_options": connection_mandatory_options,
                 "writer_class": self.driver_data_provider.get_driver_writer(driver_name=driver_name),
-                "listener_class": self.driver_data_provider.get_driver_listener(driver_name=driver_name)
+                "listener_class": self.driver_data_provider.get_driver_listener(driver_name=driver_name),
+                "writer": SourceSender(connection_options=connection_mandatory_options, driver_name=driver_name, writer_class=self.driver_data_provider.get_driver_writer(driver_name=driver_name)),
+                "listener": DestinationReceiver(connection_options=connection_mandatory_options, driver_name=driver_name, listener_class=self.driver_data_provider.get_driver_listener(driver_name=driver_name))
             },
         }
         return driver_properties, driver_id

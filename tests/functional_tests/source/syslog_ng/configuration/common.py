@@ -22,6 +22,10 @@ class SyslogNgConfigCommon(object):
     def generate_statement_id(statement_name):
         return "%s_%s" % (statement_name, get_unique_id())
 
+    @staticmethod
+    def generate_logpath_id():
+        return get_unique_id()
+
     def get_source_statement_properties(self):
         return self.syslog_ng_config['source_statements']
 

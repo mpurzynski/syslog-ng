@@ -13,7 +13,9 @@ class SyslogNgConfigWriter(object):
         syslog_ng_config_path = self.file_register.get_registered_file_path(prefix="config_%s" % topology, extension="conf")
         file_writer.write_content_to_regular_file(file_path=syslog_ng_config_path, content=raw_config)
 
-    def write_config(self, file_writer, topology):
+    def write_config(self, file_writer, topology, re_create_config):
+        if re_create_config:
+            self.syslog_ng_config_content = ""
         if self.syslog_ng_config["version"]:
             self.render_version()
         if self.syslog_ng_config["include"]:
@@ -30,7 +32,7 @@ class SyslogNgConfigWriter(object):
             self.render_logpath()
 
         syslog_ng_config_path = self.file_register.get_registered_file_path(prefix="config_%s" % topology, extension="conf")
-        file_writer.write_content_to_regular_file(file_path=syslog_ng_config_path, content=self.syslog_ng_config_content)
+        file_writer.write_content_to_regular_file(file_path=syslog_ng_config_path, content=self.syslog_ng_config_content, re_create_file=re_create_config)
 
     def render_version(self):
         self.syslog_ng_config_content += "@version: %s\n" % self.syslog_ng_config["version"]
@@ -85,8 +87,8 @@ class SyslogNgConfigWriter(object):
     def render_logpath(self):
         for logpath in self.syslog_ng_config["logpaths"]:
             self.syslog_ng_config_content += "\nlog {\n"
-            for src_driver in logpath["source_statements"]:
+            for src_driver in self.syslog_ng_config["logpaths"][logpath]["source_statements"]:
                 self.syslog_ng_config_content += "    source(%s);\n" % src_driver
-            for dst_driver in logpath["destination_statements"]:
+            for dst_driver in self.syslog_ng_config["logpaths"][logpath]["destination_statements"]:
                 self.syslog_ng_config_content += "    destination(%s);\n" % dst_driver
             self.syslog_ng_config_content += "};\n"

@@ -26,10 +26,10 @@ class SyslogNgConfigInterface(object):
             "rewrite_%s" % self.statement_pattern: [],
             "filter_%s" % self.statement_pattern: [],
             "destination_%s" % self.statement_pattern: {},
-            "logpaths": []
+            "logpaths": {}
         }
         self.config_common = SyslogNgConfigCommon(testdb_logger=testdb_logger, syslog_ng_config=self.syslog_ng_config)
-        self.config_element_connector = SyslogNgConfigElementConnector(testdb_logger=testdb_logger, syslog_ng_config=self.syslog_ng_config)
+        self.config_element_connector = SyslogNgConfigElementConnector(testdb_logger=testdb_logger, syslog_ng_config=self.syslog_ng_config, config_common=self.config_common)
         self.config_element_creator = SyslogNgConfigElementCreator(
             testdb_logger=testdb_logger,
             syslog_ng_config=self.syslog_ng_config,
@@ -67,14 +67,6 @@ class SyslogNgConfigInterface(object):
     def get_destination_statement_properties(self):
         return self.config_common.get_destination_statement_properties()
 
-    # Interface for ConfigWriter
-    def write_config(self):
-        return self.config_writer.write_config(file_writer=self.file_writer, topology=self.topology)
-
-    def write_raw_config(self, raw_config):
-        return self.config_writer.write_raw_config(raw_config=raw_config, file_writer=self.file_writer, topology=self.topology)
-
-    # Interface for ConfigCommon
     def get_logpath_node_where_statment_exist(self, statement_id):
         return self.config_common.get_logpath_node_where_statment_exist(statement_id=statement_id)
 
@@ -84,11 +76,22 @@ class SyslogNgConfigInterface(object):
     def get_connected_source_statements_where_statement_exist(self, statement_id):
         return self.config_common.get_connected_source_statements_where_statement_exist(statement_id=statement_id)
 
+    # Interface for ConfigWriter
+    def write_config(self):
+        return self.config_writer.write_config(file_writer=self.file_writer, topology=self.topology)
+
+    def write_raw_config(self, raw_config):
+        return self.config_writer.write_raw_config(raw_config=raw_config, file_writer=self.file_writer, topology=self.topology)
+
+    # Interface for ConfigConnector
+    def connect_statements_in_logpath(self, source_statements, destination_statements):
+        return self.config_element_connector.connect_statements_in_logpath(source_statements=source_statements, destination_statements=destination_statements)
+
     # High level functions
-    def generate_config(self, use_internal_source=True):
+    def generate_config(self, use_internal_source=True, re_create_config=False):
         if use_internal_source:
             self.config_element_creator.add_internal_source_to_config(file_register=self.file_register)
-        self.config_writer.write_config(file_writer=self.file_writer, topology=self.topology)
+        self.config_writer.write_config(file_writer=self.file_writer, topology=self.topology, re_create_config=re_create_config)
 
     def generate_raw_config(self, raw_config):
         self.config_writer.write_raw_config(raw_config=raw_config, file_writer=self.file_writer, topology=self.topology)

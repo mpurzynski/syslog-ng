@@ -1,7 +1,8 @@
 class SyslogNgConfigElementConnector(object):
-    def __init__(self, testdb_logger, syslog_ng_config):
+    def __init__(self, testdb_logger, syslog_ng_config, config_common):
         self.log_writer = testdb_logger.set_logger("SyslogNgConfigElementConnector")
         self.syslog_ng_config = syslog_ng_config
+        self.config_common = config_common
 
     def connect_driver_with_statement(self, driver_properties, statement, statement_name=None):
         if statement_name:
@@ -26,7 +27,9 @@ class SyslogNgConfigElementConnector(object):
         self.syslog_ng_config["%s_statements" % statement_name].update(statement)
 
     def connect_statements_in_logpath(self, source_statements, destination_statements):
-        self.syslog_ng_config['logpaths'].append({
+        logpath_id = self.config_common.generate_logpath_id()
+        self.syslog_ng_config['logpaths'][logpath_id] ={
             "source_statements": source_statements,
             "destination_statements": destination_statements
-        })
+        }
+        return self.syslog_ng_config['logpaths'][logpath_id]
