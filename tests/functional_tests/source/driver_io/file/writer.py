@@ -10,9 +10,11 @@ class FileWriter(object):
             self.log_writer.error("Unknown driver: %s" % driver_name)
             assert False
 
-    def write_content_to_regular_file(self, file_path, content):
+    def write_content_to_regular_file(self, file_path, content, re_create_file=False):
         if (content == "") or (content == []):
             assert False
+        if re_create_file:
+            self.file_common.delete_file(file_path)
         self.log_writer.info("SUBSTEP Content write\n>>>Content:%s \n>>>to: [%s]" % (content, file_path))
         with open(file_path, 'a+') as file_object:
             if isinstance(content, list):

@@ -122,6 +122,7 @@ class FileCommon(object):
         result_file_creation = self.wait_for_file_creation(file_path)
         result_file_change = self.wait_for_file_not_change(file_path)
         message_occurance = self.count_message_occurance_in_file(file_path, expected_message)
+        self.log_writer.debug("Expected message: [%s]" % expected_message)
         self.log_writer.info("Actual message occurance: %s" % message_occurance)
         self.log_writer.info("Expected message occurance: %s" % expected_occurance)
         if message_occurance != expected_occurance:
@@ -134,8 +135,10 @@ class FileCommon(object):
         lines_in_file = self.count_lines_in_file(file_path)
         return result_file_creation and result_file_change and (lines_in_file == expected_line)
 
-    def wait_for_expected_number_of_lines_in_file(self, file_path, expected_lines=1):
-        result_expected_lines_arrived = wait_till_function_not_true(self.is_expected_number_of_lines_in_file, file_path, expected_lines)
+    def wait_for_expected_number_of_lines_in_file(self, file_path, expected_lines=1, monitoring_time=10):
+        result_expected_lines_arrived = wait_till_function_not_true(self.is_expected_number_of_lines_in_file, file_path, expected_lines, monitoring_time=monitoring_time)
+        if not result_expected_lines_arrived:
+            self.log_writer.debug("Expected number of lines did not arrived, expected lines: [%s], arrived lines: [%s]" % (expected_lines, self.count_lines_in_file(file_path)))
         return result_expected_lines_arrived
 
     def wait_for_file_creation(self, file_path, monitoring_time=2):
