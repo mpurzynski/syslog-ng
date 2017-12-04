@@ -139,7 +139,7 @@ class SyslogNg(object):
         else:
             self.syslog_ng_process = None
             self.syslog_ng_pid = None
-            self.log_writer.info("syslog-ng stopped successfully")
+            self.log_writer.info("STEP syslog-ng stopped successfully")
 
     def handle_syslog_ng_reload_process_result(self):
         if not self.executor.is_pid_in_process_list(pid=self.get_syslog_ng_pid()):
@@ -148,7 +148,7 @@ class SyslogNg(object):
             self.log_writer.error("syslog-ng can not reloaded successfully")
             assert False
         else:
-            self.log_writer.info("syslog-ng reloaded successfully")
+            self.log_writer.info("STEP syslog-ng reloaded successfully")
 
     def wait_for_syslog_ng_start(self):
         control_socket_alive = False
